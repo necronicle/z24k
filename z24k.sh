@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-12"
+SCRIPT_VERSION="2026-01-07-13"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -286,11 +286,13 @@ do_install() {
 	fi
 
 	update_user_lists
+	"$SERVICE" restart
 	update_rkn_list
 
 	"$SERVICE" restart
 	log "Install complete."
 	pause_enter
+	return 0
 }
 
 preset_default() {
@@ -367,8 +369,9 @@ update_user_lists() {
 	: > "$tmp"
 	fetch "$LISTS_RAW/youtube.txt" "$TMP_DIR/youtube.txt"
 	fetch "$LISTS_RAW/discord.txt" "$TMP_DIR/discord.txt"
+	fetch "$LISTS_RAW/rkn-download.txt" "$TMP_DIR/rkn-download.txt"
 
-	cat "$TMP_DIR/youtube.txt" "$TMP_DIR/discord.txt" | awk 'NF {print $0}' | sort -u > "$tmp"
+	cat "$TMP_DIR/youtube.txt" "$TMP_DIR/discord.txt" "$TMP_DIR/rkn-download.txt" | awk 'NF {print $0}' | sort -u > "$tmp"
 	cp -f "$tmp" "$INSTALL_DIR/ipset/zapret-hosts-user.txt"
 }
 
@@ -475,7 +478,7 @@ menu() {
 			4) is_installed && apply_preset "aggressive" "$(preset_aggressive)" ;;
 			5) is_installed && apply_preset "minimal" "$(preset_minimal)" ;;
 			6) is_installed && set_mode_hostlist && update_user_lists && restart_service && pause_enter ;;
-			7) is_installed && set_mode_hostlist && update_rkn_list && restart_service && pause_enter ;;
+			7) is_installed && set_mode_hostlist && update_user_lists && restart_service && update_rkn_list && restart_service && pause_enter ;;
 			8) is_installed && toggle_nfqws2 ;;
 			9) is_installed && restart_service && pause_enter ;;
 			10) show_status && pause_enter ;;
