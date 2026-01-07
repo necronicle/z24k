@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-REPO_INSTALL_URL="https://raw.githubusercontent.com/necronicle/z24k/master/install.sh"
+REPO_INSTALL_URL="https://github.com/necronicle/z24k/raw/master/install.sh"
 
 if command -v curl >/dev/null 2>&1; then
 	exec sh -c "curl -fsSL \"$REPO_INSTALL_URL\" | sh"

@@ -16,13 +16,20 @@ VPN. Может использоваться для частичной проз�
 ставит embedded release, настраивает автозапуск, добавляет фикс UDP и хук на перезапуск firewall.
 
 ```
-curl -fsSL https://raw.githubusercontent.com/necronicle/z24k/master/install.sh | sh
+curl -fsSL https://github.com/necronicle/z24k/raw/master/install.sh | sh
 ```
 
 Альтернативная точка входа (то же самое):
 
 ```
 curl -fsSL https://raw.githubusercontent.com/necronicle/z24k/master/keenetic/install.sh | sh
+```
+
+Если raw-контент выглядит устаревшим (кэш), используйте GitHub API для получения свежего SHA:
+
+```
+sha=$(curl -fsSL https://api.github.com/repos/necronicle/z24k/commits/master | sed -n 's/.*"sha": *"\\([0-9a-f]\\+\\)".*/\\1/p' | head -n1)
+curl -fsSL https://raw.githubusercontent.com/necronicle/z24k/$sha/install.sh | sh
 ```
 
 
