@@ -1,11 +1,14 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-8"
+SCRIPT_VERSION="2026-01-07-9"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
-Z24K_RAW="https://github.com/necronicle/z24k/raw/master"
+Z24K_REPO="necronicle/z24k"
+Z24K_RAW="https://github.com/$Z24K_REPO/raw/master"
+Z24K_RAW_BASE="https://raw.githubusercontent.com/$Z24K_REPO"
 KEENETIC_RAW="$Z24K_RAW/keenetic"
+RAW_FALLBACK="$Z24K_RAW"
 LISTS_RAW="$Z24K_RAW/lists"
 INSTALL_DIR="/opt/zapret2"
 TMP_DIR="/tmp/zapret2-install"
@@ -56,6 +59,45 @@ fetch() {
 		echo "curl or wget is required" >&2
 		exit 1
 	fi
+}
+
+get_sha() {
+	if need_cmd curl; then
+		curl -fsSL "https://api.github.com/repos/$Z24K_REPO/commits/master" | \
+			sed -n 's/.*"sha": *"\\([0-9a-f]\\+\\)".*/\\1/p' | head -n1
+	elif need_cmd wget; then
+		wget -qO- "https://api.github.com/repos/$Z24K_REPO/commits/master" | \
+			sed -n 's/.*"sha": *"\\([0-9a-f]\\+\\)".*/\\1/p' | head -n1
+	fi
+}
+
+self_update() {
+	[ -n "$Z24K_NO_UPDATE" ] && return
+	[ -n "$Z24K_SELF_UPDATED" ] && return
+
+	local sha url tmp target
+	tmp="$TMP_DIR/z24k.sh.new"
+	target="$INSTALL_DIR/z24k.sh"
+	mkdir -p "$TMP_DIR"
+
+	sha=$(get_sha || true)
+	if [ -n "$sha" ]; then
+		url="$Z24K_RAW_BASE/$sha/z24k.sh"
+	else
+		url="$RAW_FALLBACK/z24k.sh"
+	fi
+
+	fetch "$url" "$tmp" || return
+	chmod +x "$tmp"
+
+	mkdir -p "$INSTALL_DIR" /opt/bin
+	cp -f "$tmp" "$target" || return
+	chmod +x "$target"
+	ln -sf "$target" /opt/bin/z24k
+
+	Z24K_SELF_UPDATED=1
+	export Z24K_SELF_UPDATED
+	exec "$target" </dev/tty
 }
 
 get_latest_ver() {
@@ -480,4 +522,5 @@ menu() {
 }
 
 log "Menu version $SCRIPT_VERSION"
+self_update
 menu
