@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-31"
+SCRIPT_VERSION="2026-01-07-32"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -371,6 +371,71 @@ pick_blob() {
 	fi
 }
 
+last_nonempty_line() {
+	awk 'NF {last=$0} END {print last}' "$1" 2>/dev/null
+}
+
+extract_blockcheck_strategy() {
+	testname="$1"
+	logfile="$2"
+	line=$(grep -F "working strategy found" "$logfile" | grep -F "$testname" | tail -n1)
+	[ -n "$line" ] || return 1
+	strategy=$(echo "$line" | sed -e 's/^.*: [^ ]* //' -e 's/ !!!!!$//' -e 's/^nfqws2 //' -e 's/^dvtws2 //' -e 's/^winws2 //' | xargs)
+	[ -n "$strategy" ] || return 1
+	printf "%s" "$strategy"
+}
+
+ensure_payload() {
+	strat="$1"
+	payload="$2"
+	case "$strat" in
+		*--payload=*) printf "%s" "$strat" ;;
+		*) printf "--payload=%s %s" "$payload" "$strat" ;;
+	esac
+}
+
+build_opt_from_autostrategies() {
+	local yt_http yt_tls yt_quic ds_tls ds_quic rkn_http rkn_tls rkn_quic
+	local def_http def_tls def_quic
+
+	def_http="--payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2"
+	def_tls="--payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5 --lua-desync=multisplit:pos=1,midsld"
+	def_quic="--payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=6"
+
+	yt_http=$(get_kv Z24K_YT_HTTP_STRAT)
+	yt_tls=$(get_kv Z24K_YT_TLS_STRAT)
+	yt_quic=$(get_kv Z24K_YT_QUIC_STRAT)
+	ds_tls=$(get_kv Z24K_DS_TLS_STRAT)
+	ds_quic=$(get_kv Z24K_DS_QUIC_STRAT)
+	rkn_http=$(get_kv Z24K_RKN_HTTP_STRAT)
+	rkn_tls=$(get_kv Z24K_RKN_TLS_STRAT)
+	rkn_quic=$(get_kv Z24K_RKN_QUIC_STRAT)
+
+	yt_http=$(ensure_payload "${yt_http:-$def_http}" "http_req")
+	yt_tls=$(ensure_payload "${yt_tls:-$def_tls}" "tls_client_hello")
+	yt_quic=$(ensure_payload "${yt_quic:-$def_quic}" "quic_initial")
+	ds_tls=$(ensure_payload "${ds_tls:-$def_tls}" "tls_client_hello")
+	ds_quic=$(ensure_payload "${ds_quic:-$def_quic}" "quic_initial")
+	rkn_http=$(ensure_payload "${rkn_http:-$def_http}" "http_req")
+	rkn_tls=$(ensure_payload "${rkn_tls:-$def_tls}" "tls_client_hello")
+	rkn_quic=$(ensure_payload "${rkn_quic:-$def_quic}" "quic_initial")
+
+	cat <<EOF
+--filter-tcp=80 --filter-l7=http --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt $yt_http --new
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt $yt_tls --new
+--filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt $yt_quic
+
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-discord.txt $ds_tls --new
+--filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts-discord.txt $ds_quic
+
+--filter-tcp=80 --filter-l7=http --hostlist=/opt/zapret2/ipset/zapret-hosts.txt $rkn_http --new
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts.txt $rkn_tls --new
+--filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts.txt $rkn_quic
+
+--filter-udp=3478,50000-65535 --filter-l7=stun,discord --payload=stun,discord_ip_discovery --lua-desync=fake:blob=0x00000000000000000000000000000000:repeats=2
+EOF
+}
+
 preset_manual_blobs() {
 	local http_blob tls_yt_blob quic_yt_blob tls_generic_blob quic_generic_blob discord_blob
 	http_blob=$(pick_blob "$INSTALL_DIR/files/fake/http_iana_org.bin" "fake_default_http")
@@ -473,6 +538,70 @@ run_blockcheck() {
 	else
 		echo -e "${yellow}blockcheck2.sh not found in $INSTALL_DIR.${plain}"
 	fi
+	pause_enter
+}
+
+auto_pick_strategy() {
+	list_key="$1"
+	list_file="$2"
+	label="$3"
+	domain=""
+	logfile="${TMPDIR:-/tmp}/z24k-blockcheck-${list_key}.log"
+
+	ensure_split_hostlists
+	domain=$(last_nonempty_line "$list_file")
+	if [ -z "$domain" ]; then
+		echo -e "${yellow}Список пустой: $list_file${plain}"
+		pause_enter
+		return
+	fi
+
+	if [ -x "$SERVICE" ]; then
+		"$SERVICE" stop || true
+	fi
+
+	echo -e "${cyan}Подбор стратегии для ${green}${label}${plain} (${domain})"
+	ZAPRET_BASE="$INSTALL_DIR" ZAPRET_RW="$INSTALL_DIR" BATCH=1 TEST=standard DOMAINS="$domain" IPVS=4 \
+		sh "$INSTALL_DIR/blockcheck2.sh" >"$logfile" 2>&1
+
+	http_strat=$(extract_blockcheck_strategy "curl_test_http" "$logfile" || true)
+	tls13_strat=$(extract_blockcheck_strategy "curl_test_https_tls13" "$logfile" || true)
+	tls12_strat=$(extract_blockcheck_strategy "curl_test_https_tls12" "$logfile" || true)
+	quic_strat=$(extract_blockcheck_strategy "curl_test_http3" "$logfile" || true)
+
+	tls_strat="$tls13_strat"
+	[ -z "$tls_strat" ] && tls_strat="$tls12_strat"
+
+	if [ -z "$http_strat" ] && [ -z "$tls_strat" ] && [ -z "$quic_strat" ]; then
+		echo -e "${yellow}Стратегия не найдена. Лог: $logfile${plain}"
+		pause_enter
+		return
+	fi
+
+	case "$list_key" in
+		yt)
+			[ -n "$http_strat" ] && set_kv Z24K_YT_HTTP_STRAT "$http_strat"
+			[ -n "$tls_strat" ] && set_kv Z24K_YT_TLS_STRAT "$tls_strat"
+			[ -n "$quic_strat" ] && set_kv Z24K_YT_QUIC_STRAT "$quic_strat"
+			;;
+		ds)
+			[ -n "$tls_strat" ] && set_kv Z24K_DS_TLS_STRAT "$tls_strat"
+			[ -n "$quic_strat" ] && set_kv Z24K_DS_QUIC_STRAT "$quic_strat"
+			;;
+		rkn)
+			[ -n "$http_strat" ] && set_kv Z24K_RKN_HTTP_STRAT "$http_strat"
+			[ -n "$tls_strat" ] && set_kv Z24K_RKN_TLS_STRAT "$tls_strat"
+			[ -n "$quic_strat" ] && set_kv Z24K_RKN_QUIC_STRAT "$quic_strat"
+			;;
+	esac
+
+	opt=$(build_opt_from_autostrategies)
+	set_opt_block "$opt"
+	set_kv NFQWS2_ENABLE 1
+	set_kv Z24K_PRESET auto
+	restart_service
+
+	echo -e "${green}Стратегия применена для $label.${plain}"
 	pause_enter
 }
 
@@ -727,14 +856,17 @@ menu() {
 		menu_item "6" "Стратегия: Manual+Blobs" ""
 		menu_item "7" "Стратегия: Aggressive" ""
 		menu_item "8" "Стратегия: Minimal (без QUIC)" ""
-		menu_item "9" "Запустить blockcheck2 (интерактивно)" ""
-		menu_item "10" "Тест стратегий (авто)" ""
-		menu_item "11" "Обновить списки YT/Discord" ""
-		menu_item "12" "Обновить список RKN" ""
-		menu_item "13" "Вкл/Выкл NFQWS2" ""
-		menu_item "14" "Перезапуск сервиса" ""
-		menu_item "15" "Показать статус" ""
-		menu_item "16" "Редактировать config" ""
+		menu_item "9" "Автоподбор стратегии: YouTube" ""
+		menu_item "10" "Автоподбор стратегии: Discord" ""
+		menu_item "11" "Автоподбор стратегии: RKN" ""
+		menu_item "12" "Запустить blockcheck2 (интерактивно)" ""
+		menu_item "13" "Тест стратегий (авто)" ""
+		menu_item "14" "Обновить списки YT/Discord" ""
+		menu_item "15" "Обновить список RKN" ""
+		menu_item "16" "Вкл/Выкл NFQWS2" ""
+		menu_item "17" "Перезапуск сервиса" ""
+		menu_item "18" "Показать статус" ""
+		menu_item "19" "Редактировать config" ""
 	fi
 	menu_item "0" "Выход" ""
 	echo ""
@@ -749,10 +881,13 @@ menu() {
 		6) is_installed && apply_preset "manual_blobs" "$(preset_manual_blobs)" ;;
 		7) is_installed && apply_preset "aggressive" "$(preset_aggressive)" ;;
 		8) is_installed && apply_preset "minimal" "$(preset_minimal)" ;;
-		9) is_installed && run_blockcheck ;;
-		10) is_installed && test_strategies ;;
-		11) is_installed && set_mode_hostlist && update_user_lists && restart_service && pause_enter ;;
-		12)
+		9) is_installed && auto_pick_strategy "yt" "$INSTALL_DIR/ipset/zapret-hosts-youtube.txt" "YouTube" ;;
+		10) is_installed && auto_pick_strategy "ds" "$INSTALL_DIR/ipset/zapret-hosts-discord.txt" "Discord" ;;
+		11) is_installed && auto_pick_strategy "rkn" "$INSTALL_DIR/ipset/zapret-hosts.txt" "RKN" ;;
+		12) is_installed && run_blockcheck ;;
+		13) is_installed && test_strategies ;;
+		14) is_installed && set_mode_hostlist && update_user_lists && restart_service && pause_enter ;;
+		15)
 			if is_installed; then
 				set_mode_hostlist
 				ensure_rkn_bootstrap_hosts
@@ -764,10 +899,10 @@ menu() {
 				pause_enter
 			fi
 			;;
-		13) is_installed && toggle_nfqws2 ;;
-		14) is_installed && restart_service && pause_enter ;;
-		15) show_status && pause_enter ;;
-		16) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
+		16) is_installed && toggle_nfqws2 ;;
+		17) is_installed && restart_service && pause_enter ;;
+		18) show_status && pause_enter ;;
+		19) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
 		0|"") exit 0 ;;
 		*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
 	esac
