@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-14"
+SCRIPT_VERSION="2026-01-07-15"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -277,7 +277,7 @@ do_install() {
 
 	if [ "$HAD_CONFIG" -eq 0 ]; then
 		sed -i 's/^NFQWS2_ENABLE=0/NFQWS2_ENABLE=1/' "$CONFIG"
-		set_kv Z24K_PRESET default
+		set_kv Z24K_PRESET universal
 		set_mode_hostlist
 	fi
 
@@ -317,11 +317,28 @@ preset_aggressive() {
 EOF
 }
 
+preset_universal() {
+	cat <<'EOF'
+--filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-2,3-20:ip6_autottl=-2,3-20:tcp_md5 --lua-desync=fakedsplit:ip_autottl=-2,3-20:ip6_autottl=-2,3-20:tcp_md5 --new
+--filter-tcp=443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:tcp_seq=-10000:repeats=6 --lua-desync=multidisorder:pos=midsld --new
+--filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=11
+EOF
+}
+
 preset_minimal() {
 	cat <<'EOF'
 --filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2 --new
 --filter-tcp=443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:tcp_seq=-10000 --lua-desync=multidisorder:pos=1,midsld
 EOF
+}
+
+apply_preset_quiet() {
+	name="$1"
+	opt="$2"
+	set_opt_block "$opt"
+	set_kv NFQWS2_ENABLE 1
+	set_kv Z24K_PRESET "$name"
+	restart_service
 }
 
 apply_preset() {
@@ -333,6 +350,44 @@ apply_preset() {
 	set_kv Z24K_PRESET "$name"
 	restart_service
 	echo -e "${green}Готово.${plain}"
+	pause_enter
+}
+
+test_url() {
+	url="$1"
+	code=$(curl -k --max-time 8 --connect-timeout 5 -s -o /dev/null -w "%{http_code}" "$url" || echo 000)
+	if [ "$code" = "000" ]; then
+		printf "%-50s %s\n" "$url" "FAIL"
+	elif [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then
+		printf "%-50s %s\n" "$url" "OK ($code)"
+	else
+		printf "%-50s %s\n" "$url" "WARN ($code)"
+	fi
+}
+
+test_strategies() {
+	if ! need_cmd curl; then
+		echo "curl is required for tests."
+		pause_enter
+		return
+	fi
+	set_mode_hostlist
+	ensure_hostlist_file
+	update_user_lists
+	urls="https://www.youtube.com/ https://discord.com/ https://discord.gg/ https://antizapret.prostovpn.org:8443/domains-export.txt https://antizapret.prostovpn.org/domains-export.txt"
+	for name in universal default aggressive minimal; do
+		echo ""
+		echo -e "${cyan}Testing strategy: ${green}${name}${plain}"
+		case "$name" in
+			universal) apply_preset_quiet "$name" "$(preset_universal)" ;;
+			default) apply_preset_quiet "$name" "$(preset_default)" ;;
+			aggressive) apply_preset_quiet "$name" "$(preset_aggressive)" ;;
+			minimal) apply_preset_quiet "$name" "$(preset_minimal)" ;;
+		esac
+		for url in $urls; do
+			test_url "$url"
+		done
+	done
 	pause_enter
 }
 
@@ -483,15 +538,17 @@ menu() {
 		menu_item "1" "Установка/Обновление" ""
 		menu_item "2" "Удаление" ""
 		if is_installed; then
-			menu_item "3" "Стратегия: Default" ""
-			menu_item "4" "Стратегия: Aggressive" ""
-			menu_item "5" "Стратегия: Minimal (без QUIC)" ""
-			menu_item "6" "Обновить списки YT/Discord" ""
-			menu_item "7" "Обновить список RKN" ""
-			menu_item "8" "Вкл/Выкл NFQWS2" ""
-			menu_item "9" "Перезапуск сервиса" ""
-			menu_item "10" "Показать статус" ""
-			menu_item "11" "Редактировать config" ""
+			menu_item "3" "Стратегия: Universal (auto TTL)" ""
+			menu_item "4" "Стратегия: Default" ""
+			menu_item "5" "Стратегия: Aggressive" ""
+			menu_item "6" "Стратегия: Minimal (без QUIC)" ""
+			menu_item "7" "Тест стратегий (авто)" ""
+			menu_item "8" "Обновить списки YT/Discord" ""
+			menu_item "9" "Обновить список RKN" ""
+			menu_item "10" "Вкл/Выкл NFQWS2" ""
+			menu_item "11" "Перезапуск сервиса" ""
+			menu_item "12" "Показать статус" ""
+			menu_item "13" "Редактировать config" ""
 			menu_item "0" "Выход" ""
 		else
 			menu_item "0" "Выход" ""
@@ -502,15 +559,17 @@ menu() {
 		case "$ans" in
 			1) do_install ;;
 			2) do_uninstall ;;
-			3) is_installed && apply_preset "default" "$(preset_default)" ;;
-			4) is_installed && apply_preset "aggressive" "$(preset_aggressive)" ;;
-			5) is_installed && apply_preset "minimal" "$(preset_minimal)" ;;
-			6) is_installed && set_mode_hostlist && update_user_lists && restart_service && pause_enter ;;
-			7) is_installed && set_mode_hostlist && ensure_hostlist_file && update_user_lists && restart_service && { update_rkn_list || log "RKN update failed. You can retry from the menu."; } && restart_service && pause_enter ;;
-			8) is_installed && toggle_nfqws2 ;;
-			9) is_installed && restart_service && pause_enter ;;
-			10) show_status && pause_enter ;;
-			11) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
+			3) is_installed && apply_preset "universal" "$(preset_universal)" ;;
+			4) is_installed && apply_preset "default" "$(preset_default)" ;;
+			5) is_installed && apply_preset "aggressive" "$(preset_aggressive)" ;;
+			6) is_installed && apply_preset "minimal" "$(preset_minimal)" ;;
+			7) is_installed && test_strategies ;;
+			8) is_installed && set_mode_hostlist && update_user_lists && restart_service && pause_enter ;;
+			9) is_installed && set_mode_hostlist && ensure_hostlist_file && update_user_lists && restart_service && { update_rkn_list || log "RKN update failed. You can retry from the menu."; } && restart_service && pause_enter ;;
+			10) is_installed && toggle_nfqws2 ;;
+			11) is_installed && restart_service && pause_enter ;;
+			12) show_status && pause_enter ;;
+			13) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
 			0|"") exit 0 ;;
 			*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
 		esac
