@@ -3,6 +3,7 @@ set -e
 
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
+KEENETIC_REPO_RAW="https://raw.githubusercontent.com/necronicle/z24k/master/keenetic"
 INSTALL_DIR="/opt/zapret2"
 TMP_DIR="/tmp/zapret2-install"
 
@@ -83,13 +84,13 @@ install_extras() {
 	mkdir -p /opt/etc/ndm/netfilter.d /opt/etc/init.d
 	mkdir -p "$INSTALL_DIR/init.d/sysv/custom.d"
 
-	cp -f "$INSTALL_DIR/keenetic/000-zapret2.sh" /opt/etc/ndm/netfilter.d/000-zapret2.sh
+	fetch "$KEENETIC_REPO_RAW/000-zapret2.sh" /opt/etc/ndm/netfilter.d/000-zapret2.sh
 	chmod +x /opt/etc/ndm/netfilter.d/000-zapret2.sh
 
-	cp -f "$INSTALL_DIR/keenetic/S00fix" /opt/etc/init.d/S00fix
+	fetch "$KEENETIC_REPO_RAW/S00fix" /opt/etc/init.d/S00fix
 	chmod +x /opt/etc/init.d/S00fix
 
-	cp -f "$INSTALL_DIR/keenetic/zapret2" "$INSTALL_DIR/init.d/sysv/zapret2"
+	fetch "$KEENETIC_REPO_RAW/zapret2" "$INSTALL_DIR/init.d/sysv/zapret2"
 	chmod +x "$INSTALL_DIR/init.d/sysv/zapret2"
 
 	cp -f "$INSTALL_DIR/init.d/custom.d.examples.linux/10-keenetic-udp-fix" \
