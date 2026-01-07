@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-16"
+SCRIPT_VERSION="2026-01-07-17"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -484,6 +484,7 @@ ensure_rkn_bootstrap_hosts() {
 	[ -f "$f" ] || : > "$f"
 	grep -q '^antizapret\.prostovpn\.org$' "$f" 2>/dev/null || echo "antizapret.prostovpn.org" >> "$f"
 	grep -q '^prostovpn\.org$' "$f" 2>/dev/null || echo "prostovpn.org" >> "$f"
+	grep -q '^raw\.githubusercontent\.com$' "$f" 2>/dev/null || echo "raw.githubusercontent.com" >> "$f"
 }
 
 update_rkn_list() {
@@ -498,7 +499,8 @@ update_rkn_list() {
 	if [ -n "$Z24K_RKN_URLS" ]; then
 		urls="$Z24K_RKN_URLS"
 	else
-		urls="https://antizapret.prostovpn.org:8443/domains-export.txt \
+		urls="$Z24K_RAW/domains-export.txt \
+https://antizapret.prostovpn.org:8443/domains-export.txt \
 https://antizapret.prostovpn.org/domains-export.txt"
 	fi
 
