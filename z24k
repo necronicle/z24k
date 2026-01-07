@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-33"
+SCRIPT_VERSION="2026-01-07-34"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -385,6 +385,8 @@ last_nonempty_line_any() {
 	if [ -f "$gz" ] && [ -s "$gz" ]; then
 		if command -v gzip >/dev/null 2>&1; then
 			gzip -cd "$gz" 2>/dev/null | awk 'NF {last=$0} END {print last}'
+		elif command -v gunzip >/dev/null 2>&1; then
+			gunzip -c "$gz" 2>/dev/null | awk 'NF {last=$0} END {print last}'
 		elif command -v zcat >/dev/null 2>&1; then
 			zcat "$gz" 2>/dev/null | awk 'NF {last=$0} END {print last}'
 		fi
@@ -396,6 +398,15 @@ get_rkn_hostlist_path() {
 		ZAPRET_BASE="$INSTALL_DIR" ZAPRET_RW="$INSTALL_DIR" . "$INSTALL_DIR/ipset/def.sh"
 	fi
 	echo "${ZHOSTLIST:-$INSTALL_DIR/ipset/zapret-hosts.txt}"
+}
+
+last_nonempty_line_hostlist() {
+	file="$1"
+	if command -v zzcat >/dev/null 2>&1; then
+		zzcat "$file" 2>/dev/null | awk 'NF {last=$0} END {print last}'
+	else
+		last_nonempty_line_any "$file"
+	fi
 }
 
 extract_blockcheck_strategy() {
@@ -574,12 +585,16 @@ auto_pick_strategy() {
 	ensure_split_hostlists
 	if [ "$list_key" = "rkn" ]; then
 		list_file=$(get_rkn_hostlist_path)
-		if [ -z "$(last_nonempty_line_any "$list_file")" ]; then
+		if [ -z "$(last_nonempty_line_hostlist "$list_file")" ]; then
 			ensure_rkn_bootstrap_hosts
 			update_rkn_list || true
 		fi
 	fi
-	domain=$(last_nonempty_line_any "$list_file")
+	if [ "$list_key" = "rkn" ]; then
+		domain=$(last_nonempty_line_hostlist "$list_file")
+	else
+		domain=$(last_nonempty_line_any "$list_file")
+	fi
 	if [ -z "$domain" ]; then
 		echo -e "${yellow}Список пустой: $list_file${plain}"
 		pause_enter
