@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-53"
+SCRIPT_VERSION="2026-01-07-54"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -921,33 +921,46 @@ EOF
 }
 
 magisk_block_youtube() {
-	local tls_blob quic_blob
+	local tls_blob quic_blob seqovl_opts
 	tls_blob=$(pick_blob "$INSTALL_DIR/files/fake/tls_clienthello_www_google_com.bin" "fake_default_tls")
 	quic_blob=$(pick_blob "$INSTALL_DIR/files/fake/quic_initial_www_google_com.bin" "fake_default_quic")
+	seqovl_opts=$(magisk_seqovl_opts)
 	cat <<EOF
---filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=tls_client_hello --lua-desync=send:repeats=2 --lua-desync=syndata:blob=$tls_blob --lua-desync=multisplit:seqovl=700:seqovl_pattern=$tls_blob:tcp_flags_unset=ack --new
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=tls_client_hello --lua-desync=send:repeats=2 --lua-desync=syndata:blob=$tls_blob $seqovl_opts --new
 --filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=quic_initial --lua-desync=fake:blob=$quic_blob:repeats=6
 EOF
 }
 
 magisk_block_discord() {
-	local tls_blob
+	local tls_blob seqovl_opts
 	tls_blob=$(pick_blob "$INSTALL_DIR/files/fake/tls_clienthello_www_google_com.bin" "fake_default_tls")
+	seqovl_opts=$(magisk_seqovl_opts)
 	cat <<EOF
---filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-discord.txt --payload=tls_client_hello --lua-desync=send:repeats=2 --lua-desync=syndata:blob=$tls_blob --lua-desync=multisplit:seqovl=700:seqovl_pattern=$tls_blob:tcp_flags_unset=ack --new
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-discord.txt --payload=tls_client_hello --lua-desync=send:repeats=2 --lua-desync=syndata:blob=$tls_blob $seqovl_opts --new
 EOF
 }
 
 magisk_block_rkn() {
-	local http_blob tls_blob quic_blob
+	local http_blob tls_blob quic_blob seqovl_opts
 	http_blob=$(pick_blob "$INSTALL_DIR/files/fake/http_iana_org.bin" "fake_default_http")
 	tls_blob=$(pick_blob "$INSTALL_DIR/files/fake/tls_clienthello_www_google_com.bin" "fake_default_tls")
 	quic_blob=$(pick_blob "$INSTALL_DIR/files/fake/quic_initial_www_google_com.bin" "fake_default_quic")
+	seqovl_opts=$(magisk_seqovl_opts)
 	cat <<EOF
 --filter-tcp=80 --filter-l7=http --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=http_req --lua-desync=fake:blob=$http_blob:tcp_md5 --lua-desync=multisplit:pos=method+2 --new
---filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=tls_client_hello --lua-desync=send:repeats=2 --lua-desync=syndata:blob=$tls_blob --lua-desync=multisplit:seqovl=700:seqovl_pattern=$tls_blob:tcp_flags_unset=ack --new
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=tls_client_hello --lua-desync=send:repeats=2 --lua-desync=syndata:blob=$tls_blob $seqovl_opts --new
 --filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=quic_initial --lua-desync=fake:blob=$quic_blob:repeats=6
 EOF
+}
+
+magisk_seqovl_opts() {
+	local file
+	file="$INSTALL_DIR/files/fake/tls_clienthello_www_google_com.bin"
+	if [ -f "$file" ] && [ -s "$file" ]; then
+		printf "%s" "--blob=tls_google:@$file --lua-desync=multisplit:seqovl=700:seqovl_pattern=tls_google:tcp_flags_unset=ack"
+	else
+		printf "%s" "--lua-desync=multisplit:seqovl=700:tcp_flags_unset=ack"
+	fi
 }
 
 magisk_block_discord_voice() {
