@@ -3,7 +3,7 @@ zapret2 for Keenetic (Entware)
 
 This repository provides a one-command installer for Keenetic routers via Entware.
 
-Quick install:
+Quick install (opens menu):
 
 ```
 curl -fsSL https://github.com/necronicle/z24k/raw/master/install.sh | sh
@@ -22,9 +22,7 @@ What the installer does:
 - Preserves your /opt/zapret2/config on reinstall
 
 After install:
-- Edit /opt/zapret2/config if needed (enable NFQWS2, change ports, lists, etc.)
-- Restart: /opt/zapret2/init.d/sysv/zapret2 restart
-- Menu: run `z24k` to select strategies
+- Menu: run `z24k` to select strategies and manage service
 
 Alternate entrypoint (same behavior):
 
