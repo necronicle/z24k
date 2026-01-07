@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-37"
+SCRIPT_VERSION="2026-01-07-38"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -604,7 +604,12 @@ auto_pick_strategy() {
 	echo -e "${cyan}Подбор стратегии для ${green}${label}${plain} (${domain})"
 	log "Лог blockcheck2: $logfile"
 	: > "$logfile"
-	ZAPRET_BASE="$INSTALL_DIR" ZAPRET_RW="$INSTALL_DIR" BATCH=1 TEST=standard DOMAINS="$domain" IPVS=4 \
+	if [ "$list_key" = "rkn" ]; then
+		scanlevel="force"
+	else
+		scanlevel=""
+	fi
+	ZAPRET_BASE="$INSTALL_DIR" ZAPRET_RW="$INSTALL_DIR" BATCH=1 TEST=standard DOMAINS="$domain" IPVS=4 SCANLEVEL="$scanlevel" \
 		sh "$INSTALL_DIR/blockcheck2.sh" >"$logfile" 2>&1 || true
 
 	http_strat=$(extract_blockcheck_strategy "curl_test_http" "$logfile" || true)
