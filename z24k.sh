@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-36"
+SCRIPT_VERSION="2026-01-07-37"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -40,6 +40,16 @@ fi
 
 log() {
 	echo "[z24k] $*"
+}
+
+pick_tmpdir() {
+	if [ -n "$TMPDIR" ] && [ -w "$TMPDIR" ]; then
+		echo "$TMPDIR"
+	elif [ -w /tmp ]; then
+		echo /tmp
+	else
+		echo /opt/tmp
+	fi
 }
 
 read_tty() {
@@ -566,7 +576,9 @@ auto_pick_strategy() {
 	list_file="$2"
 	label="$3"
 	domain=""
-	logfile="${TMPDIR:-/tmp}/z24k-blockcheck-${list_key}.log"
+	tmpdir=$(pick_tmpdir)
+	mkdir -p "$tmpdir"
+	logfile="$tmpdir/z24k-blockcheck-${list_key}.log"
 
 	ensure_split_hostlists
 	if [ "$list_key" = "rkn" ]; then
@@ -590,8 +602,10 @@ auto_pick_strategy() {
 	fi
 
 	echo -e "${cyan}Подбор стратегии для ${green}${label}${plain} (${domain})"
+	log "Лог blockcheck2: $logfile"
+	: > "$logfile"
 	ZAPRET_BASE="$INSTALL_DIR" ZAPRET_RW="$INSTALL_DIR" BATCH=1 TEST=standard DOMAINS="$domain" IPVS=4 \
-		sh "$INSTALL_DIR/blockcheck2.sh" >"$logfile" 2>&1
+		sh "$INSTALL_DIR/blockcheck2.sh" >"$logfile" 2>&1 || true
 
 	http_strat=$(extract_blockcheck_strategy "curl_test_http" "$logfile" || true)
 	tls13_strat=$(extract_blockcheck_strategy "curl_test_https_tls13" "$logfile" || true)
