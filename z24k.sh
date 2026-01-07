@@ -5,6 +5,20 @@ CONFIG="/opt/zapret2/config"
 CONFIG_DEFAULT="/opt/zapret2/config.default"
 SERVICE="/opt/zapret2/init.d/sysv/zapret2"
 
+plain='\033[0m'
+red='\033[0;31m'
+green='\033[0;32m'
+yellow='\033[0;33m'
+cyan='\033[0;36m'
+
+pause_enter() {
+  read -re -p "Enter для продолжения" _
+}
+
+menu_item() {
+  echo -e "${green}$1. $2${plain} $3"
+}
+
 need_config() {
 	if [ ! -f "$CONFIG" ]; then
 		echo "Config not found: $CONFIG" >&2
@@ -20,6 +34,11 @@ set_kv() {
 	else
 		echo "${key}=${val}" >> "$CONFIG"
 	fi
+}
+
+get_kv() {
+	key="$1"
+	grep "^${key}=" "$CONFIG" | tail -n1 | cut -d= -f2-
 }
 
 get_opt_block() {
@@ -72,11 +91,13 @@ restart_service() {
 apply_preset() {
 	name="$1"
 	opt="$2"
-	echo "Applying preset: $name"
+	echo -e "${cyan}Применение стратегии: ${green}${name}${plain}"
 	set_opt_block "$opt"
 	set_kv NFQWS2_ENABLE 1
+	set_kv Z24K_PRESET "$name"
 	restart_service
-	echo "Done."
+	echo -e "${green}Готово.${plain}"
+	pause_enter
 }
 
 preset_default() {
@@ -107,37 +128,61 @@ EOF
 }
 
 show_status() {
-	echo "NFQWS2_ENABLE: $(grep '^NFQWS2_ENABLE=' "$CONFIG" | tail -n1)"
-	echo "NFQWS2_PORTS_TCP: $(grep '^NFQWS2_PORTS_TCP=' "$CONFIG" | tail -n1)"
-	echo "NFQWS2_PORTS_UDP: $(grep '^NFQWS2_PORTS_UDP=' "$CONFIG" | tail -n1)"
-	ps | grep -v grep | grep nfqws2 || true
+	local preset enable running
+	preset=$(get_kv Z24K_PRESET)
+	enable=$(get_kv NFQWS2_ENABLE)
+	[ -z "$preset" ] && preset="unknown"
+	[ -z "$enable" ] && enable="unknown"
+
+	echo -e "${cyan}--- Статус ---${plain}"
+	echo "Preset: $preset"
+	echo "NFQWS2_ENABLE: $enable"
+	ps | grep -v grep | grep nfqws2 >/dev/null 2>&1 && running="${green}running${plain}" || running="${red}stopped${plain}"
+	echo -e "nfqws2: $running"
+}
+
+toggle_nfqws2() {
+	local cur
+	cur=$(get_kv NFQWS2_ENABLE)
+	if [ "$cur" = "1" ]; then
+		set_kv NFQWS2_ENABLE 0
+		echo -e "${yellow}NFQWS2 отключен.${plain}"
+	else
+		set_kv NFQWS2_ENABLE 1
+		echo -e "${green}NFQWS2 включен.${plain}"
+	fi
+	restart_service
+	pause_enter
 }
 
 menu() {
 	need_config
 	while :; do
+		clear
+		echo -e "${cyan}--- z24k меню ---${plain}"
+		show_status
 		echo ""
-		echo "z24k menu"
-		echo "1) Apply default strategy"
-		echo "2) Apply aggressive strategy"
-		echo "3) Apply minimal strategy (no QUIC)"
-		echo "4) Disable nfqws2"
-		echo "5) Restart service"
-		echo "6) Show status"
-		echo "7) Edit config"
-		echo "0) Exit"
-		printf "> "
-		read -r choice
-		case "$choice" in
+		menu_item "1" "Стратегия: Default" ""
+		menu_item "2" "Стратегия: Aggressive" ""
+		menu_item "3" "Стратегия: Minimal (без QUIC)" ""
+		menu_item "4" "Вкл/Выкл NFQWS2" ""
+		menu_item "5" "Перезапуск сервиса" ""
+		menu_item "6" "Показать статус" ""
+		menu_item "7" "Редактировать config" ""
+		menu_item "0" "Выход" ""
+		echo ""
+		read -re -p "Ваш выбор: " ans
+
+		case "$ans" in
 			1) apply_preset "default" "$(preset_default)" ;;
 			2) apply_preset "aggressive" "$(preset_aggressive)" ;;
 			3) apply_preset "minimal" "$(preset_minimal)" ;;
-			4) set_kv NFQWS2_ENABLE 0; restart_service ;;
-			5) restart_service ;;
-			6) show_status ;;
+			4) toggle_nfqws2 ;;
+			5) restart_service; pause_enter ;;
+			6) show_status; pause_enter ;;
 			7) ${EDITOR:-vi} "$CONFIG" ;;
-			0) exit 0 ;;
-			*) echo "Unknown option" ;;
+			0|"") exit 0 ;;
+			*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
 		esac
 	done
 }
