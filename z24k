@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-13"
+SCRIPT_VERSION="2026-01-07-14"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -287,7 +287,9 @@ do_install() {
 
 	update_user_lists
 	"$SERVICE" restart
-	update_rkn_list
+	if ! update_rkn_list; then
+		log "RKN update failed. You can retry from the menu."
+	fi
 
 	"$SERVICE" restart
 	log "Install complete."
@@ -367,12 +369,38 @@ update_user_lists() {
 	mkdir -p "$TMP_DIR" "$INSTALL_DIR/ipset"
 
 	: > "$tmp"
-	fetch "$LISTS_RAW/youtube.txt" "$TMP_DIR/youtube.txt"
-	fetch "$LISTS_RAW/discord.txt" "$TMP_DIR/discord.txt"
-	fetch "$LISTS_RAW/rkn-download.txt" "$TMP_DIR/rkn-download.txt"
+	if ! fetch "$LISTS_RAW/youtube.txt" "$TMP_DIR/youtube.txt"; then
+		cat <<'EOF' > "$TMP_DIR/youtube.txt"
+youtube.com
+youtu.be
+ytimg.com
+googleusercontent.com
+googlevideo.com
+EOF
+	fi
+	if ! fetch "$LISTS_RAW/discord.txt" "$TMP_DIR/discord.txt"; then
+		cat <<'EOF' > "$TMP_DIR/discord.txt"
+discord.com
+discord.gg
+discordapp.com
+discordapp.net
+discordcdn.com
+EOF
+	fi
+	if ! fetch "$LISTS_RAW/rkn-download.txt" "$TMP_DIR/rkn-download.txt"; then
+		cat <<'EOF' > "$TMP_DIR/rkn-download.txt"
+antizapret.prostovpn.org
+prostovpn.org
+EOF
+	fi
 
 	cat "$TMP_DIR/youtube.txt" "$TMP_DIR/discord.txt" "$TMP_DIR/rkn-download.txt" | awk 'NF {print $0}' | sort -u > "$tmp"
 	cp -f "$tmp" "$INSTALL_DIR/ipset/zapret-hosts-user.txt"
+}
+
+ensure_hostlist_file() {
+	mkdir -p "$INSTALL_DIR/ipset"
+	: > "$INSTALL_DIR/ipset/zapret-hosts-user.txt"
 }
 
 update_rkn_list() {
@@ -478,7 +506,7 @@ menu() {
 			4) is_installed && apply_preset "aggressive" "$(preset_aggressive)" ;;
 			5) is_installed && apply_preset "minimal" "$(preset_minimal)" ;;
 			6) is_installed && set_mode_hostlist && update_user_lists && restart_service && pause_enter ;;
-			7) is_installed && set_mode_hostlist && update_user_lists && restart_service && update_rkn_list && restart_service && pause_enter ;;
+			7) is_installed && set_mode_hostlist && ensure_hostlist_file && update_user_lists && restart_service && { update_rkn_list || log "RKN update failed. You can retry from the menu."; } && restart_service && pause_enter ;;
 			8) is_installed && toggle_nfqws2 ;;
 			9) is_installed && restart_service && pause_enter ;;
 			10) show_status && pause_enter ;;
