@@ -1,12 +1,7 @@
 #!/bin/sh
 set -e
 
-ROOT_INSTALL="/opt/zapret2/install.sh"
 REPO_INSTALL_URL="https://raw.githubusercontent.com/necronicle/z24k/master/install.sh"
-
-if [ -x "$ROOT_INSTALL" ]; then
-	exec "$ROOT_INSTALL" "$@"
-fi
 
 if command -v curl >/dev/null 2>&1; then
 	exec sh -c "curl -fsSL \"$REPO_INSTALL_URL\" | sh"

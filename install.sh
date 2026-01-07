@@ -1,6 +1,7 @@
 #!/bin/sh
 set -e
 
+SCRIPT_VERSION="2026-01-07-1"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 KEENETIC_REPO_RAW="https://raw.githubusercontent.com/necronicle/z24k/master/keenetic"
@@ -81,6 +82,7 @@ set_ws_user() {
 }
 
 install_extras() {
+	log "Fetching Keenetic extras from $KEENETIC_REPO_RAW"
 	mkdir -p /opt/etc/ndm/netfilter.d /opt/etc/init.d
 	mkdir -p "$INSTALL_DIR/init.d/sysv/custom.d"
 
@@ -126,6 +128,7 @@ install_release() {
 }
 
 main() {
+	log "Installer version $SCRIPT_VERSION"
 	if [ ! -d /opt ]; then
 		echo "/opt is required (Entware). Install Entware first." >&2
 		exit 1
