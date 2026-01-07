@@ -459,6 +459,15 @@ ensure_hostlist_file() {
 	: > "$INSTALL_DIR/ipset/zapret-hosts-user.txt"
 }
 
+ensure_rkn_bootstrap_hosts() {
+	local f
+	f="$INSTALL_DIR/ipset/zapret-hosts-user.txt"
+	mkdir -p "$INSTALL_DIR/ipset"
+	[ -f "$f" ] || : > "$f"
+	grep -q '^antizapret\.prostovpn\.org$' "$f" 2>/dev/null || echo "antizapret.prostovpn.org" >> "$f"
+	grep -q '^prostovpn\.org$' "$f" 2>/dev/null || echo "prostovpn.org" >> "$f"
+}
+
 update_rkn_list() {
 	local urls url tmpfile zdom ok tmpbase
 	if [ -f "$INSTALL_DIR/ipset/def.sh" ]; then
@@ -569,7 +578,7 @@ menu() {
 			6) is_installed && apply_preset "minimal" "$(preset_minimal)" ;;
 			7) is_installed && test_strategies ;;
 			8) is_installed && set_mode_hostlist && update_user_lists && restart_service && pause_enter ;;
-			9) is_installed && set_mode_hostlist && ensure_hostlist_file && update_user_lists && restart_service && { update_rkn_list || log "RKN update failed. You can retry from the menu."; } && restart_service && pause_enter ;;
+			9) is_installed && set_mode_hostlist && ensure_rkn_bootstrap_hosts && restart_service && { update_rkn_list || log "RKN update failed. You can retry from the menu."; } && restart_service && pause_enter ;;
 			10) is_installed && toggle_nfqws2 ;;
 			11) is_installed && restart_service && pause_enter ;;
 			12) show_status && pause_enter ;;
