@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-24"
+SCRIPT_VERSION="2026-01-07-25"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -313,6 +313,23 @@ EOF
 	fi
 }
 
+preset_manual() {
+	cat <<'EOF'
+--filter-tcp=80 --filter-l7=http --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2 --new
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5 --lua-desync=multisplit:pos=1,midsld --new
+--filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=6
+
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-discord.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5 --lua-desync=multisplit:pos=1,midsld --new
+--filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts-discord.txt --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=6
+
+--filter-tcp=80 --filter-l7=http --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2 --new
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5 --lua-desync=multisplit:pos=1,midsld --new
+--filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=6
+
+--filter-udp=3478,50000-65535 --filter-l7=stun,discord --payload=stun,discord_ip_discovery --lua-desync=fake:blob=0x00000000000000000000000000000000:repeats=2
+EOF
+}
+
 preset_aggressive() {
 	cat <<'EOF'
 --filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5:ip_autottl=-2,3-20 --lua-desync=fakedsplit:ip_autottl=-2,3-20:tcp_md5 --new
@@ -399,13 +416,14 @@ test_strategies() {
 	log "Preparing hostlist"
 	update_user_lists >/dev/null 2>&1 || true
 	urls="https://www.youtube.com/ https://discord.com/ https://discord.gg/ https://antizapret.prostovpn.org:8443/domains-export.txt https://antizapret.prostovpn.org/domains-export.txt"
-	for name in universal default aggressive minimal; do
+	for name in universal default manual aggressive minimal; do
 		ok=0
 		total=0
 		echo -e "${cyan}Testing: ${green}${name}${plain}"
 		case "$name" in
 			universal) apply_preset_quiet "$name" "$(preset_universal)" ;;
 			default) apply_preset_quiet "$name" "$(preset_default)" ;;
+			manual) apply_preset_quiet "$name" "$(preset_manual)" ;;
 			aggressive) apply_preset_quiet "$name" "$(preset_aggressive)" ;;
 			minimal) apply_preset_quiet "$name" "$(preset_minimal)" ;;
 		esac
@@ -617,38 +635,18 @@ show_status() {
 
 	echo -e "${cyan}--- Статус ---${plain}"
 	if is_installed; then
-		echo "Installed: yes"
-	else
-		echo "Installed: no"
-	fi
-	echo "Preset: $preset"
-	echo "NFQWS2_ENABLE: $enable"
-	ps | grep -v grep | grep nfqws2 >/dev/null 2>&1 && running="${green}running${plain}" || running="${red}stopped${plain}"
-	echo -e "nfqws2: $running"
-}
-
-menu() {
-	while :; do
-		safe_clear
-		echo -e "${cyan}--- z24k меню ---${plain}"
-		show_status
-		echo ""
-
-		menu_item "1" "Установка/Обновление" ""
-		menu_item "2" "Удаление" ""
-		if is_installed; then
-			menu_item "3" "Стратегия: Universal (split lists)" ""
-			menu_item "4" "Стратегия: Default" ""
-			menu_item "5" "Стратегия: Aggressive" ""
-			menu_item "6" "Стратегия: Minimal (без QUIC)" ""
-			menu_item "7" "Тест стратегий (авто)" ""
-			menu_item "8" "Обновить списки YT/Discord" ""
-			menu_item "9" "Обновить список RKN" ""
-			menu_item "10" "Вкл/Выкл NFQWS2" ""
-			menu_item "11" "Перезапуск сервиса" ""
-			menu_item "12" "Показать статус" ""
-			menu_item "13" "Редактировать config" ""
-			menu_item "0" "Выход" ""
+			menu_item "3" "Strategy: Universal (split lists)" ""
+			menu_item "4" "Strategy: Default" ""
+			menu_item "5" "Strategy: Manual" ""
+			menu_item "6" "Strategy: Aggressive" ""
+			menu_item "7" "Strategy: Minimal (no QUIC)" ""
+			menu_item "8" "Test strategies (auto)" ""
+			menu_item "9" "Update lists YT/Discord" ""
+			menu_item "10" "Update list RKN" ""
+			menu_item "11" "Toggle NFQWS2" ""
+			menu_item "12" "Restart service" ""
+			menu_item "13" "Show status" ""
+			menu_item "14" "Edit config" ""
 		else
 			menu_item "0" "Выход" ""
 		fi
