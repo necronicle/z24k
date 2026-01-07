@@ -375,6 +375,22 @@ last_nonempty_line() {
 	awk 'NF {last=$0} END {print last}' "$1" 2>/dev/null
 }
 
+last_nonempty_line_any() {
+	file="$1"
+	gz="${file}.gz"
+	if [ -f "$file" ] && [ -s "$file" ]; then
+		last_nonempty_line "$file"
+		return
+	fi
+	if [ -f "$gz" ] && [ -s "$gz" ]; then
+		if command -v gzip >/dev/null 2>&1; then
+			gzip -cd "$gz" 2>/dev/null | awk 'NF {last=$0} END {print last}'
+		elif command -v zcat >/dev/null 2>&1; then
+			zcat "$gz" 2>/dev/null | awk 'NF {last=$0} END {print last}'
+		fi
+	fi
+}
+
 extract_blockcheck_strategy() {
 	testname="$1"
 	logfile="$2"
@@ -549,7 +565,7 @@ auto_pick_strategy() {
 	logfile="${TMPDIR:-/tmp}/z24k-blockcheck-${list_key}.log"
 
 	ensure_split_hostlists
-	domain=$(last_nonempty_line "$list_file")
+	domain=$(last_nonempty_line_any "$list_file")
 	if [ -z "$domain" ]; then
 		echo -e "${yellow}Список пустой: $list_file${plain}"
 		pause_enter
