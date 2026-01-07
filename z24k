@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-30"
+SCRIPT_VERSION="2026-01-07-31"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -364,7 +364,7 @@ EOF
 pick_blob() {
 	file="$1"
 	fallback="$2"
-	if [ -f "$file" ]; then
+	if [ -f "$file" ] && [ -s "$file" ] && dd if="$file" of=/dev/null bs=1 count=1 2>/dev/null; then
 		printf "@%s" "$file"
 	else
 		printf "%s" "$fallback"
