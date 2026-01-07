@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-56"
+SCRIPT_VERSION="2026-01-07-57"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1071,7 +1071,7 @@ ensure_extra_blobs() {
 	base="$Z24K_RAW/files/fake"
 	dst="$INSTALL_DIR/files/fake"
 	mkdir -p "$dst"
-	for file in tls_clienthello_www_google_com.bin; do
+	for file in tls_clienthello_www_google_com.bin http_iana_org.bin quic_initial_www_google_com.bin; do
 		if [ ! -s "$dst/$file" ]; then
 			fetch "$base/$file" "$dst/$file" || true
 		fi
