@@ -24,6 +24,7 @@ What the installer does:
 After install:
 - Edit /opt/zapret2/config if needed (enable NFQWS2, change ports, lists, etc.)
 - Restart: /opt/zapret2/init.d/sysv/zapret2 restart
+- Menu: run `z24k` to select strategies
 
 Alternate entrypoint (same behavior):
 

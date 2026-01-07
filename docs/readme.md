@@ -25,6 +25,11 @@ curl -fsSL https://github.com/necronicle/z24k/raw/master/install.sh | sh
 curl -fsSL https://raw.githubusercontent.com/necronicle/z24k/master/keenetic/install.sh | sh
 ```
 
+После установки можно открыть меню и выбрать стратегию:
+```
+z24k
+```
+
 Если raw-контент выглядит устаревшим (кэш), используйте GitHub API для получения свежего SHA:
 
 ```

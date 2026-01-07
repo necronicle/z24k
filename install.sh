@@ -1,12 +1,14 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-1"
+SCRIPT_VERSION="2026-01-07-2"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
-KEENETIC_REPO_RAW="https://raw.githubusercontent.com/necronicle/z24k/master/keenetic"
+Z24K_RAW="https://github.com/necronicle/z24k/raw/master"
+KEENETIC_REPO_RAW="$Z24K_RAW/keenetic"
 INSTALL_DIR="/opt/zapret2"
 TMP_DIR="/tmp/zapret2-install"
+HAD_CONFIG=0
 
 export PATH="/opt/bin:/opt/sbin:$PATH"
 
@@ -51,6 +53,7 @@ get_latest_ver() {
 
 backup_config() {
 	if [ -f "$INSTALL_DIR/config" ]; then
+		HAD_CONFIG=1
 		mkdir -p "$TMP_DIR"
 		cp -f "$INSTALL_DIR/config" "$TMP_DIR/config.bak"
 	fi
@@ -79,6 +82,13 @@ set_ws_user() {
 	if [ -n "$user" ] && "$bin" --dry-run --user="$user" 2>&1 | grep -q queue; then
 		sed -i "s/^#WS_USER=.*/WS_USER=$user/" "$config"
 	fi
+}
+
+install_menu() {
+	fetch "$Z24K_RAW/z24k.sh" "$INSTALL_DIR/z24k.sh"
+	chmod +x "$INSTALL_DIR/z24k.sh"
+	mkdir -p /opt/bin
+	ln -sf "$INSTALL_DIR/z24k.sh" /opt/bin/z24k
 }
 
 install_extras() {
@@ -152,6 +162,11 @@ main() {
 	restore_config
 	set_ws_user
 	install_extras
+	install_menu
+
+	if [ "$HAD_CONFIG" -eq 0 ]; then
+		sed -i 's/^NFQWS2_ENABLE=0/NFQWS2_ENABLE=1/' "$INSTALL_DIR/config"
+	fi
 
 	if [ -x /opt/etc/init.d/S00fix ]; then
 		/opt/etc/init.d/S00fix start || true
