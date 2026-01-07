@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-54"
+SCRIPT_VERSION="2026-01-07-55"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1056,6 +1056,18 @@ ensure_hostlist_file() {
 	: > "$INSTALL_DIR/ipset/zapret-hosts-user.txt"
 }
 
+ensure_extra_blobs() {
+	local base dst file
+	base="$Z24K_RAW/files/fake"
+	dst="$INSTALL_DIR/files/fake"
+	mkdir -p "$dst"
+	for file in tls_clienthello_www_google_com.bin; do
+		if [ ! -s "$dst/$file" ]; then
+			fetch "$base/$file" "$dst/$file" || true
+		fi
+	done
+}
+
 ensure_rkn_bootstrap_hosts() {
 	local f
 	f="$INSTALL_DIR/ipset/zapret-hosts-user.txt"
@@ -1217,7 +1229,7 @@ menu() {
 		17) is_installed && restart_service && pause_enter ;;
 		18) show_status && pause_enter ;;
 		19) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
-		20) is_installed && apply_preset "magisk" "$(preset_magisk)" ;;
+		20) is_installed && ensure_extra_blobs && apply_preset "magisk" "$(preset_magisk)" ;;
 		0|"") exit 0 ;;
 		*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
 	esac
