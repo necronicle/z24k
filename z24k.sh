@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-20"
+SCRIPT_VERSION="2026-01-07-21"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -375,10 +375,13 @@ test_url() {
 	rc=$?
 	if [ "$rc" -ne 0 ] || [ "$code" = "000" ]; then
 		printf "%-50s %s\n" "$url" "FAIL"
+		return 1
 	elif [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then
 		printf "%-50s %s\n" "$url" "OK ($code)"
+		return 0
 	else
 		printf "%-50s %s\n" "$url" "WARN ($code)"
+		return 1
 	fi
 }
 
@@ -410,8 +413,9 @@ test_strategies() {
 		for url in $urls; do
 			total=$((total + 1))
 			out=$(test_url "$url")
+			rc=$?
 			echo "$out"
-			echo "$out" | grep -q "OK (" && ok=$((ok + 1))
+			[ "$rc" -eq 0 ] && ok=$((ok + 1))
 		done
 		echo -e "${green}Result:${plain} ${ok}/${total} OK"
 		echo ""
@@ -594,8 +598,9 @@ generate_strategy() {
 		restart_service_quiet
 
 		out=$(test_url "$url")
+		rc=$?
 		echo "$out"
-		if echo "$out" | grep -q "OK ("; then
+		if [ "$rc" -eq 0 ]; then
 			read_tty "Save? (s)ave/(n)ext/(q)uit: " ans
 			case "$ans" in
 				s|S)
