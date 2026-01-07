@@ -1124,7 +1124,7 @@ ensure_blob_files() {
 }
 
 sync_category_lists() {
-	local line key value tmp
+	local line key value tmp current hostlist ipset strategy
 	ensure_category_files
 	mkdir -p "$LISTS_DIR" "$TMP_DIR"
 	tmp="$TMP_DIR/z24k-category-lists.txt"
@@ -1132,16 +1132,33 @@ sync_category_lists() {
 	while IFS= read -r line || [ -n "$line" ]; do
 		line=$(printf "%s" "$line" | tr -d '\r')
 		case "$line" in
-			""|\#*|";"*|"["*"]") continue ;;
+			""|\#*|";"*) continue ;;
 		esac
-		key=$(printf "%s" "$line" | cut -d'=' -f1)
-		value=$(printf "%s" "$line" | cut -d'=' -f2-)
-		case "$key" in
-			hostlist|ipset)
-				[ -n "$value" ] && printf "%s\n" "$value" >> "$tmp"
-				;;
-		esac
+		if echo "$line" | grep -q '^\[.*\]$'; then
+			if [ -n "$current" ] && [ -n "$strategy" ] && [ "$strategy" != "disabled" ]; then
+				[ -n "$hostlist" ] && printf "%s\n" "$hostlist" >> "$tmp"
+				[ -n "$ipset" ] && printf "%s\n" "$ipset" >> "$tmp"
+			fi
+			current=$(printf "%s" "$line" | sed 's/^\[\(.*\)\]$/\1/')
+			hostlist=""
+			ipset=""
+			strategy=""
+			continue
+		fi
+		if echo "$line" | grep -q '^[a-z_]*='; then
+			key=$(printf "%s" "$line" | cut -d'=' -f1)
+			value=$(printf "%s" "$line" | cut -d'=' -f2-)
+			case "$key" in
+				hostlist) hostlist="$value" ;;
+				ipset) ipset="$value" ;;
+				strategy) strategy="$value" ;;
+			esac
+		fi
 	done < "$CATEGORIES_FILE"
+	if [ -n "$current" ] && [ -n "$strategy" ] && [ "$strategy" != "disabled" ]; then
+		[ -n "$hostlist" ] && printf "%s\n" "$hostlist" >> "$tmp"
+		[ -n "$ipset" ] && printf "%s\n" "$ipset" >> "$tmp"
+	fi
 	sort -u "$tmp" | while IFS= read -r file; do
 		[ -z "$file" ] && continue
 		fetch "$LISTS_RAW/$file" "$LISTS_DIR/$file" || true
