@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-25"
+SCRIPT_VERSION="2026-01-07-27"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -330,6 +330,41 @@ preset_manual() {
 EOF
 }
 
+pick_blob() {
+	file="$1"
+	fallback="$2"
+	if [ -f "$file" ]; then
+		printf "@%s" "$file"
+	else
+		printf "%s" "$fallback"
+	fi
+}
+
+preset_manual_blobs() {
+	local http_blob tls_yt_blob quic_yt_blob tls_generic_blob quic_generic_blob discord_blob
+	http_blob=$(pick_blob "$INSTALL_DIR/files/fake/http_iana_org.bin" "fake_default_http")
+	tls_yt_blob=$(pick_blob "$INSTALL_DIR/files/fake/tls_clienthello_www_google_com.bin" "fake_default_tls")
+	quic_yt_blob=$(pick_blob "$INSTALL_DIR/files/fake/quic_initial_rr2---sn-gvnuxaxjvh-o8ge_googlevideo_com.bin" "fake_default_quic")
+	tls_generic_blob=$(pick_blob "$INSTALL_DIR/files/fake/tls_clienthello_iana_org.bin" "fake_default_tls")
+	quic_generic_blob=$(pick_blob "$INSTALL_DIR/files/fake/quic_initial_www_google_com.bin" "fake_default_quic")
+	discord_blob=$(pick_blob "$INSTALL_DIR/files/fake/discord-ip-discovery-without-port.bin" "0x00000000000000000000000000000000")
+
+	cat <<EOF
+--filter-tcp=80 --filter-l7=http --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=http_req --lua-desync=fake:blob=$http_blob:tcp_md5 --lua-desync=multisplit:pos=method+2 --new
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=tls_client_hello --lua-desync=fake:blob=$tls_yt_blob:tcp_md5 --lua-desync=multisplit:pos=1,midsld --new
+--filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=quic_initial --lua-desync=fake:blob=$quic_yt_blob:repeats=6
+
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-discord.txt --payload=tls_client_hello --lua-desync=fake:blob=$tls_generic_blob:tcp_md5 --lua-desync=multisplit:pos=1,midsld --new
+--filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts-discord.txt --payload=quic_initial --lua-desync=fake:blob=$quic_generic_blob:repeats=6
+
+--filter-tcp=80 --filter-l7=http --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=http_req --lua-desync=fake:blob=$http_blob:tcp_md5 --lua-desync=multisplit:pos=method+2 --new
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=tls_client_hello --lua-desync=fake:blob=$tls_generic_blob:tcp_md5 --lua-desync=multisplit:pos=1,midsld --new
+--filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=quic_initial --lua-desync=fake:blob=$quic_generic_blob:repeats=6
+
+--filter-udp=3478,50000-65535 --filter-l7=stun,discord --payload=stun,discord_ip_discovery --lua-desync=fake:blob=$discord_blob:repeats=2
+EOF
+}
+
 preset_aggressive() {
 	cat <<'EOF'
 --filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5:ip_autottl=-2,3-20 --lua-desync=fakedsplit:ip_autottl=-2,3-20:tcp_md5 --new
@@ -401,6 +436,15 @@ test_url() {
 	fi
 }
 
+run_blockcheck() {
+	if [ -x "$INSTALL_DIR/blockcheck2.sh" ]; then
+		ZAPRET_BASE="$INSTALL_DIR" ZAPRET_RW="$INSTALL_DIR" sh "$INSTALL_DIR/blockcheck2.sh"
+	else
+		echo -e "${yellow}blockcheck2.sh not found in $INSTALL_DIR.${plain}"
+	fi
+	pause_enter
+}
+
 test_strategies() {
 	if ! need_cmd curl; then
 		echo "curl is required for tests."
@@ -416,7 +460,7 @@ test_strategies() {
 	log "Preparing hostlist"
 	update_user_lists >/dev/null 2>&1 || true
 	urls="https://www.youtube.com/ https://discord.com/ https://discord.gg/ https://antizapret.prostovpn.org:8443/domains-export.txt https://antizapret.prostovpn.org/domains-export.txt"
-	for name in universal default manual aggressive minimal; do
+	for name in universal default manual manual_blobs aggressive minimal; do
 		ok=0
 		total=0
 		echo -e "${cyan}Testing: ${green}${name}${plain}"
@@ -424,6 +468,7 @@ test_strategies() {
 			universal) apply_preset_quiet "$name" "$(preset_universal)" ;;
 			default) apply_preset_quiet "$name" "$(preset_default)" ;;
 			manual) apply_preset_quiet "$name" "$(preset_manual)" ;;
+			manual_blobs) apply_preset_quiet "$name" "$(preset_manual_blobs)" ;;
 			aggressive) apply_preset_quiet "$name" "$(preset_aggressive)" ;;
 			minimal) apply_preset_quiet "$name" "$(preset_minimal)" ;;
 		esac
@@ -627,48 +672,88 @@ is_installed() {
 }
 
 show_status() {
-	local preset enable running
+	local preset enable running installed
 	preset=$(get_kv Z24K_PRESET)
 	enable=$(get_kv NFQWS2_ENABLE)
 	[ -z "$preset" ] && preset="unknown"
 	[ -z "$enable" ] && enable="unknown"
 
-	echo -e "${cyan}--- Статус ---${plain}"
 	if is_installed; then
+		installed="yes"
+	else
+		installed="no"
+	fi
+
+	running="stopped"
+	if ps 2>/dev/null | grep -v grep | grep -q "nfqws2"; then
+		running="running"
+	fi
+
+	echo -e "${cyan}--- Status ---${plain}"
+	echo "Installed: $installed"
+	echo "Preset: $preset"
+	echo "NFQWS2_ENABLE: $enable"
+	echo "nfqws2: $running"
+}
+
+menu() {
+	while true; do
+		safe_clear
+		echo -e "${cyan}--- z24k menu ---${plain}"
+		show_status
+		echo ""
+		menu_item "1" "Install/Update" ""
+		menu_item "2" "Uninstall" ""
+		if is_installed; then
 			menu_item "3" "Strategy: Universal (split lists)" ""
 			menu_item "4" "Strategy: Default" ""
 			menu_item "5" "Strategy: Manual" ""
-			menu_item "6" "Strategy: Aggressive" ""
-			menu_item "7" "Strategy: Minimal (no QUIC)" ""
-			menu_item "8" "Test strategies (auto)" ""
-			menu_item "9" "Update lists YT/Discord" ""
-			menu_item "10" "Update list RKN" ""
-			menu_item "11" "Toggle NFQWS2" ""
-			menu_item "12" "Restart service" ""
-			menu_item "13" "Show status" ""
-			menu_item "14" "Edit config" ""
-		else
-			menu_item "0" "Выход" ""
+			menu_item "6" "Strategy: Manual+Blobs" ""
+			menu_item "7" "Strategy: Aggressive" ""
+			menu_item "8" "Strategy: Minimal (no QUIC)" ""
+			menu_item "9" "Run blockcheck2 (interactive)" ""
+			menu_item "10" "Test strategies (auto)" ""
+			menu_item "11" "Update lists YT/Discord" ""
+			menu_item "12" "Update list RKN" ""
+			menu_item "13" "Toggle NFQWS2" ""
+			menu_item "14" "Restart service" ""
+			menu_item "15" "Show status" ""
+			menu_item "16" "Edit config" ""
 		fi
+		menu_item "0" "Exit" ""
 		echo ""
-		read_tty "Ваш выбор: " ans
+		read_tty "Select: " ans
 
 		case "$ans" in
 			1) do_install ;;
 			2) do_uninstall ;;
 			3) is_installed && apply_preset "universal" "$(preset_universal)" ;;
 			4) is_installed && apply_preset "default" "$(preset_default)" ;;
-			5) is_installed && apply_preset "aggressive" "$(preset_aggressive)" ;;
-			6) is_installed && apply_preset "minimal" "$(preset_minimal)" ;;
-			7) is_installed && test_strategies ;;
-			8) is_installed && set_mode_hostlist && update_user_lists && restart_service && pause_enter ;;
-			9) is_installed && set_mode_hostlist && ensure_rkn_bootstrap_hosts && restart_service && { update_rkn_list || log "RKN update failed. You can retry from the menu."; } && restart_service && pause_enter ;;
-			10) is_installed && toggle_nfqws2 ;;
-			11) is_installed && restart_service && pause_enter ;;
-			12) show_status && pause_enter ;;
-			13) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
+			5) is_installed && apply_preset "manual" "$(preset_manual)" ;;
+			6) is_installed && apply_preset "manual_blobs" "$(preset_manual_blobs)" ;;
+			7) is_installed && apply_preset "aggressive" "$(preset_aggressive)" ;;
+			8) is_installed && apply_preset "minimal" "$(preset_minimal)" ;;
+			9) is_installed && run_blockcheck ;;
+			10) is_installed && test_strategies ;;
+			11) is_installed && set_mode_hostlist && update_user_lists && restart_service && pause_enter ;;
+			12)
+				if is_installed; then
+					set_mode_hostlist
+					ensure_rkn_bootstrap_hosts
+					restart_service
+					if ! update_rkn_list; then
+						log "RKN update failed. You can retry from the menu."
+					fi
+					restart_service
+					pause_enter
+				fi
+				;;
+			13) is_installed && toggle_nfqws2 ;;
+			14) is_installed && restart_service && pause_enter ;;
+			15) show_status && pause_enter ;;
+			16) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
 			0|"") exit 0 ;;
-			*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
+			*) echo -e "${yellow}Invalid choice.${plain}"; sleep 1 ;;
 		esac
 	done
 }
