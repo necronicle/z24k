@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-52"
+SCRIPT_VERSION="2026-01-07-53"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -607,6 +607,10 @@ preset_manual_blobs() {
 EOF
 }
 
+preset_magisk() {
+	build_opt_from_magisk_blocks
+}
+
 preset_aggressive() {
 	cat <<'EOF'
 --filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5:ip_autottl=-2,3-20 --lua-desync=fakedsplit:ip_autottl=-2,3-20:tcp_md5 --new
@@ -857,7 +861,7 @@ test_strategies() {
 	log "Preparing hostlist"
 	update_user_lists >/dev/null 2>&1 || true
 	urls="https://www.youtube.com/ https://discord.com/ https://discord.gg/ https://antizapret.prostovpn.org:8443/domains-export.txt https://antizapret.prostovpn.org/domains-export.txt"
-	for name in universal default manual manual_blobs aggressive minimal; do
+	for name in universal default manual manual_blobs magisk aggressive minimal; do
 		ok=0
 		total=0
 		echo -e "${cyan}Testing: ${green}${name}${plain}"
@@ -866,6 +870,7 @@ test_strategies() {
 			default) apply_preset_quiet "$name" "$(preset_default)" ;;
 			manual) apply_preset_quiet "$name" "$(preset_manual)" ;;
 			manual_blobs) apply_preset_quiet "$name" "$(preset_manual_blobs)" ;;
+			magisk) apply_preset_quiet "$name" "$(preset_magisk)" ;;
 			aggressive) apply_preset_quiet "$name" "$(preset_aggressive)" ;;
 			minimal) apply_preset_quiet "$name" "$(preset_minimal)" ;;
 		esac
@@ -913,6 +918,50 @@ default_block_discord_voice() {
 	cat <<'EOF'
 --filter-udp=3478,50000-65535 --filter-l7=stun,discord --payload=stun,discord_ip_discovery --lua-desync=fake:blob=0x00000000000000000000000000000000:repeats=2
 EOF
+}
+
+magisk_block_youtube() {
+	local tls_blob quic_blob
+	tls_blob=$(pick_blob "$INSTALL_DIR/files/fake/tls_clienthello_www_google_com.bin" "fake_default_tls")
+	quic_blob=$(pick_blob "$INSTALL_DIR/files/fake/quic_initial_www_google_com.bin" "fake_default_quic")
+	cat <<EOF
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=tls_client_hello --lua-desync=send:repeats=2 --lua-desync=syndata:blob=$tls_blob --lua-desync=multisplit:seqovl=700:seqovl_pattern=$tls_blob:tcp_flags_unset=ack --new
+--filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=quic_initial --lua-desync=fake:blob=$quic_blob:repeats=6
+EOF
+}
+
+magisk_block_discord() {
+	local tls_blob
+	tls_blob=$(pick_blob "$INSTALL_DIR/files/fake/tls_clienthello_www_google_com.bin" "fake_default_tls")
+	cat <<EOF
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-discord.txt --payload=tls_client_hello --lua-desync=send:repeats=2 --lua-desync=syndata:blob=$tls_blob --lua-desync=multisplit:seqovl=700:seqovl_pattern=$tls_blob:tcp_flags_unset=ack --new
+EOF
+}
+
+magisk_block_rkn() {
+	local http_blob tls_blob quic_blob
+	http_blob=$(pick_blob "$INSTALL_DIR/files/fake/http_iana_org.bin" "fake_default_http")
+	tls_blob=$(pick_blob "$INSTALL_DIR/files/fake/tls_clienthello_www_google_com.bin" "fake_default_tls")
+	quic_blob=$(pick_blob "$INSTALL_DIR/files/fake/quic_initial_www_google_com.bin" "fake_default_quic")
+	cat <<EOF
+--filter-tcp=80 --filter-l7=http --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=http_req --lua-desync=fake:blob=$http_blob:tcp_md5 --lua-desync=multisplit:pos=method+2 --new
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=tls_client_hello --lua-desync=send:repeats=2 --lua-desync=syndata:blob=$tls_blob --lua-desync=multisplit:seqovl=700:seqovl_pattern=$tls_blob:tcp_flags_unset=ack --new
+--filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=quic_initial --lua-desync=fake:blob=$quic_blob:repeats=6
+EOF
+}
+
+magisk_block_discord_voice() {
+	cat <<'EOF'
+--filter-udp=3478,50000-65535 --filter-l7=stun,discord --payload=stun,discord_ip_discovery --out-range=-n10 --lua-desync=fake:blob=0x00000000000000000000000000000000:repeats=2
+EOF
+}
+
+build_opt_from_magisk_blocks() {
+	yblock=$(magisk_block_youtube)
+	dblock=$(magisk_block_discord)
+	rblock=$(magisk_block_rkn)
+	vblock=$(magisk_block_discord_voice)
+	printf "%s\n%s\n%s\n%s\n" "$yblock" "$dblock" "$rblock" "$vblock"
 }
 
 build_opt_from_blocks() {
@@ -1118,6 +1167,7 @@ menu() {
 		menu_item "17" "Перезапуск сервиса" ""
 		menu_item "18" "Показать статус" ""
 		menu_item "19" "Редактировать config" ""
+		menu_item "20" "Стратегия: Magisk (community)" ""
 	fi
 	menu_item "0" "Выход" ""
 	echo ""
@@ -1154,6 +1204,7 @@ menu() {
 		17) is_installed && restart_service && pause_enter ;;
 		18) show_status && pause_enter ;;
 		19) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
+		20) is_installed && apply_preset "magisk" "$(preset_magisk)" ;;
 		0|"") exit 0 ;;
 		*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
 	esac
