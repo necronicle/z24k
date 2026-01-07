@@ -1,19 +1,31 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-57"
+SCRIPT_VERSION="2026-01-07-58"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
 Z24K_RAW="https://raw.githubusercontent.com/$Z24K_REPO/master"
 KEENETIC_RAW="$Z24K_RAW/keenetic"
 LISTS_RAW="$Z24K_RAW/lists"
+CAT_RAW="$Z24K_RAW/categories.ini"
+TCP_RAW="$Z24K_RAW/strategies-tcp.ini"
+UDP_RAW="$Z24K_RAW/strategies-udp.ini"
+STUN_RAW="$Z24K_RAW/strategies-stun.ini"
+BLOBS_RAW="$Z24K_RAW/blobs.txt"
 INSTALL_DIR="/opt/zapret2"
 TMP_DIR="/tmp/zapret2-install"
+LISTS_DIR="$INSTALL_DIR/ipset"
+PKT_OUT=10
 
 CONFIG="$INSTALL_DIR/config"
 CONFIG_DEFAULT="$INSTALL_DIR/config.default"
 SERVICE="$INSTALL_DIR/init.d/sysv/zapret2"
+CATEGORIES_FILE="$INSTALL_DIR/z24k-categories.ini"
+STRAT_TCP_FILE="$INSTALL_DIR/z24k-strategies-tcp.ini"
+STRAT_UDP_FILE="$INSTALL_DIR/z24k-strategies-udp.ini"
+STRAT_STUN_FILE="$INSTALL_DIR/z24k-strategies-stun.ini"
+BLOBS_FILE="$INSTALL_DIR/z24k-blobs.txt"
 
 plain='\033[0m'
 red='\033[0;31m'
@@ -625,6 +637,12 @@ preset_magisk() {
 	build_opt_from_magisk_blocks
 }
 
+preset_categories() {
+	ensure_category_files
+	sync_category_lists
+	build_opt_from_categories
+}
+
 preset_aggressive() {
 	cat <<'EOF'
 --filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5:ip_autottl=-2,3-20 --lua-desync=fakedsplit:ip_autottl=-2,3-20:tcp_md5 --new
@@ -875,18 +893,12 @@ test_strategies() {
 	log "Preparing hostlist"
 	update_user_lists >/dev/null 2>&1 || true
 	urls="https://www.youtube.com/ https://discord.com/ https://discord.gg/ https://antizapret.prostovpn.org:8443/domains-export.txt https://antizapret.prostovpn.org/domains-export.txt"
-	for name in universal default manual manual_blobs magisk aggressive minimal; do
+	for name in categories; do
 		ok=0
 		total=0
 		echo -e "${cyan}Testing: ${green}${name}${plain}"
 		case "$name" in
-			universal) apply_preset_quiet "$name" "$(preset_universal)" ;;
-			default) apply_preset_quiet "$name" "$(preset_default)" ;;
-			manual) apply_preset_quiet "$name" "$(preset_manual)" ;;
-			manual_blobs) apply_preset_quiet "$name" "$(preset_manual_blobs)" ;;
-			magisk) apply_preset_quiet "$name" "$(preset_magisk)" ;;
-			aggressive) apply_preset_quiet "$name" "$(preset_aggressive)" ;;
-			minimal) apply_preset_quiet "$name" "$(preset_minimal)" ;;
+			categories) apply_preset_quiet "$name" "$(preset_categories)" ;;
 		esac
 		for url in $urls; do
 			total=$((total + 1))
@@ -1078,6 +1090,230 @@ ensure_extra_blobs() {
 	done
 }
 
+ensure_category_files() {
+	mkdir -p "$INSTALL_DIR"
+	fetch "$CAT_RAW" "$CATEGORIES_FILE" || true
+	fetch "$TCP_RAW" "$STRAT_TCP_FILE" || true
+	fetch "$UDP_RAW" "$STRAT_UDP_FILE" || true
+	fetch "$STUN_RAW" "$STRAT_STUN_FILE" || true
+	fetch "$BLOBS_RAW" "$BLOBS_FILE" || true
+}
+
+ensure_blob_files() {
+	local line file
+	ensure_category_files
+	[ -f "$BLOBS_FILE" ] || return 0
+	mkdir -p "$INSTALL_DIR/files/fake"
+	while IFS= read -r line || [ -n "$line" ]; do
+		line=$(printf "%s" "$line" | tr -d '\r')
+		case "$line" in
+			""|\#*|";"*) continue ;;
+			--blob=*)
+				file=$(printf "%s" "$line" | sed -n 's/.*@bin\\///p')
+				[ -z "$file" ] && continue
+				if [ ! -s "$INSTALL_DIR/files/fake/$file" ]; then
+					fetch "$Z24K_RAW/files/fake/$file" "$INSTALL_DIR/files/fake/$file" || true
+				fi
+				;;
+		esac
+	done < "$BLOBS_FILE"
+}
+
+sync_category_lists() {
+	local line key value tmp
+	ensure_category_files
+	mkdir -p "$LISTS_DIR" "$TMP_DIR"
+	tmp="$TMP_DIR/z24k-category-lists.txt"
+	: > "$tmp"
+	while IFS= read -r line || [ -n "$line" ]; do
+		line=$(printf "%s" "$line" | tr -d '\r')
+		case "$line" in
+			""|\#*|";"*|"["*"]") continue ;;
+		esac
+		key=$(printf "%s" "$line" | cut -d'=' -f1)
+		value=$(printf "%s" "$line" | cut -d'=' -f2-)
+		case "$key" in
+			hostlist|ipset)
+				[ -n "$value" ] && printf "%s\n" "$value" >> "$tmp"
+				;;
+		esac
+	done < "$CATEGORIES_FILE"
+	sort -u "$tmp" | while IFS= read -r file; do
+		[ -z "$file" ] && continue
+		fetch "$LISTS_RAW/$file" "$LISTS_DIR/$file" || true
+	done
+}
+
+build_blob_prefix_from_file() {
+	local line prefix out
+	[ -f "$1" ] || return 0
+	prefix=""
+	while IFS= read -r line || [ -n "$line" ]; do
+		line=$(printf "%s" "$line" | tr -d '\r')
+		case "$line" in
+			""|\#*|";"*) continue ;;
+			--blob=*)
+				out=$(printf "%s" "$line" | sed "s|@bin/|@$INSTALL_DIR/files/fake/|g")
+				if [ -n "$prefix" ]; then
+					prefix="$prefix $out"
+				else
+					prefix="$out"
+				fi
+				;;
+		esac
+	done < "$1"
+	printf "%s" "$prefix"
+}
+
+get_strategy_args_from_ini() {
+	local file name
+	file="$1"
+	name="$2"
+	awk -v s="$name" '
+		BEGIN{in=0}
+		$0 ~ "^\\["s"\\]$" {in=1; next}
+		in && /^\\[/ {exit}
+		in && /^args=/ {sub(/^args=/,""); print; exit}
+	' "$file" 2>/dev/null
+}
+
+build_category_filter() {
+	local mode file
+	mode="$1"
+	file="$2"
+	case "$mode" in
+		hostlist) [ -n "$file" ] && printf "%s" "--hostlist=$LISTS_DIR/$file" ;;
+		ipset) [ -n "$file" ] && printf "%s" "--ipset=$LISTS_DIR/$file" ;;
+	esac
+}
+
+build_category_opts() {
+	local proto mode file strategy filter_opts args full
+	proto="$1"
+	mode="$2"
+	file="$3"
+	strategy="$4"
+	filter_opts=$(build_category_filter "$mode" "$file")
+	case "$proto" in
+		stun)
+			args=$(get_strategy_args_from_ini "$STRAT_STUN_FILE" "$strategy")
+			[ -z "$args" ] && return 1
+			full="$args"
+			[ -n "$filter_opts" ] && full="$filter_opts $args"
+			printf "%s" "$full"
+			;;
+		udp)
+			args=$(get_strategy_args_from_ini "$STRAT_UDP_FILE" "$strategy")
+			[ -z "$args" ] && return 1
+			full="--out-range=-n$PKT_OUT --filter-udp=443,1400,50000-51000"
+			[ -n "$filter_opts" ] && full="$full $filter_opts"
+			printf "%s %s" "$full" "$args"
+			;;
+		tcp|*)
+			args=$(get_strategy_args_from_ini "$STRAT_TCP_FILE" "$strategy")
+			[ -z "$args" ] && return 1
+			full="--out-range=-n$PKT_OUT --filter-tcp=80,443"
+			[ -n "$filter_opts" ] && full="$full $filter_opts"
+			printf "%s %s" "$full" "$args"
+			;;
+	esac
+}
+
+build_opt_from_categories() {
+	local line current protocol hostlist ipset filter_mode strategy opts prefix first effective_mode filter_file cat_opts key value
+	ensure_category_files
+	ensure_blob_files
+	[ -f "$CATEGORIES_FILE" ] || return 0
+	prefix=$(build_blob_prefix_from_file "$BLOBS_FILE")
+	opts=""
+	[ -n "$prefix" ] && opts="$prefix"
+	first=1
+	current=""
+	protocol="tcp"
+	hostlist=""
+	ipset=""
+	filter_mode=""
+	strategy=""
+	while IFS= read -r line || [ -n "$line" ]; do
+		line=$(printf "%s" "$line" | tr -d '\r')
+		case "$line" in
+			""|\#*|";"*) continue ;;
+		esac
+		if echo "$line" | grep -q '^\[.*\]$'; then
+			if [ -n "$current" ] && [ -n "$strategy" ] && [ "$strategy" != "disabled" ]; then
+				effective_mode="$filter_mode"
+				if [ -z "$effective_mode" ]; then
+					if [ -n "$hostlist" ]; then
+						effective_mode="hostlist"
+					elif [ -n "$ipset" ]; then
+						effective_mode="ipset"
+					else
+						effective_mode="none"
+					fi
+				fi
+				case "$effective_mode" in
+					ipset) filter_file="$ipset" ;;
+					hostlist) filter_file="$hostlist" ;;
+					*) filter_file="" ;;
+				esac
+				cat_opts=$(build_category_opts "$protocol" "$effective_mode" "$filter_file" "$strategy")
+				if [ -n "$cat_opts" ]; then
+					if [ "$first" -eq 0 ]; then
+						opts="$opts --new"
+					fi
+					opts="$opts $cat_opts"
+					first=0
+				fi
+			fi
+			current=$(printf "%s" "$line" | sed 's/^\[\(.*\)\]$/\1/')
+			protocol="tcp"
+			hostlist=""
+			ipset=""
+			filter_mode=""
+			strategy=""
+			continue
+		fi
+		if echo "$line" | grep -q '^[a-z_]*='; then
+			key=$(printf "%s" "$line" | cut -d'=' -f1)
+			value=$(printf "%s" "$line" | cut -d'=' -f2-)
+			case "$key" in
+				protocol) protocol="$value" ;;
+				hostlist) hostlist="$value" ;;
+				ipset) ipset="$value" ;;
+				filter_mode) filter_mode="$value" ;;
+				strategy) strategy="$value" ;;
+			esac
+		fi
+	done < "$CATEGORIES_FILE"
+
+	if [ -n "$current" ] && [ -n "$strategy" ] && [ "$strategy" != "disabled" ]; then
+		effective_mode="$filter_mode"
+		if [ -z "$effective_mode" ]; then
+			if [ -n "$hostlist" ]; then
+				effective_mode="hostlist"
+			elif [ -n "$ipset" ]; then
+				effective_mode="ipset"
+			else
+				effective_mode="none"
+			fi
+		fi
+		case "$effective_mode" in
+			ipset) filter_file="$ipset" ;;
+			hostlist) filter_file="$hostlist" ;;
+			*) filter_file="" ;;
+		esac
+		cat_opts=$(build_category_opts "$protocol" "$effective_mode" "$filter_file" "$strategy")
+		if [ -n "$cat_opts" ]; then
+			if [ "$first" -eq 0 ]; then
+				opts="$opts --new"
+			fi
+			opts="$opts $cat_opts"
+		fi
+	fi
+
+	printf "%s" "$opts"
+}
+
 ensure_rkn_bootstrap_hosts() {
 	local f
 	f="$INSTALL_DIR/ipset/zapret-hosts-user.txt"
@@ -1185,24 +1421,19 @@ menu() {
 	menu_item "1" "Установка/Обновление" ""
 	menu_item "2" "Удаление" ""
 	if is_installed; then
-		menu_item "3" "Стратегия: Universal (split lists)" ""
-		menu_item "4" "Стратегия: Default" ""
-		menu_item "5" "Стратегия: Manual" ""
-		menu_item "6" "Стратегия: Manual+Blobs" ""
-		menu_item "7" "Стратегия: Aggressive" ""
-		menu_item "8" "Стратегия: Minimal (без QUIC)" ""
-		menu_item "9" "Автоподбор стратегии: YouTube" ""
-		menu_item "10" "Автоподбор стратегии: Discord" ""
-		menu_item "11" "Автоподбор стратегии: RKN" ""
-		menu_item "12" "Запустить blockcheck2 (интерактивно)" ""
-		menu_item "13" "Тест стратегий (авто)" ""
-		menu_item "14" "Обновить списки YT/Discord" ""
-		menu_item "15" "Обновить список RKN" ""
-		menu_item "16" "Вкл/Выкл NFQWS2" ""
-		menu_item "17" "Перезапуск сервиса" ""
-		menu_item "18" "Показать статус" ""
-		menu_item "19" "Редактировать config" ""
-		menu_item "20" "Стратегия: Magisk (community)" ""
+		menu_item "3" "Стратегия: Категории (community)" ""
+		menu_item "4" "Обновить все списки" ""
+		menu_item "5" "Редактировать категории" ""
+		menu_item "6" "Автоподбор стратегии: YouTube" ""
+		menu_item "7" "Автоподбор стратегии: Discord" ""
+		menu_item "8" "Автоподбор стратегии: RKN" ""
+		menu_item "9" "Запустить blockcheck2 (интерактивно)" ""
+		menu_item "10" "Тест стратегий (авто)" ""
+		menu_item "11" "Обновить список RKN" ""
+		menu_item "12" "Вкл/Выкл NFQWS2" ""
+		menu_item "13" "Перезапуск сервиса" ""
+		menu_item "14" "Показать статус" ""
+		menu_item "15" "Редактировать config" ""
 	fi
 	menu_item "0" "Выход" ""
 	echo ""
@@ -1211,19 +1442,15 @@ menu() {
 	case "$ans" in
 		1) do_install ;;
 		2) do_uninstall ;;
-		3) is_installed && apply_preset "universal" "$(preset_universal)" ;;
-		4) is_installed && apply_preset "default" "$(preset_default)" ;;
-		5) is_installed && apply_preset "manual" "$(preset_manual)" ;;
-		6) is_installed && apply_preset "manual_blobs" "$(preset_manual_blobs)" ;;
-		7) is_installed && apply_preset "aggressive" "$(preset_aggressive)" ;;
-		8) is_installed && apply_preset "minimal" "$(preset_minimal)" ;;
-		9) is_installed && auto_pick_strategy "yt" "$INSTALL_DIR/ipset/zapret-hosts-youtube.txt" "YouTube" ;;
-		10) is_installed && auto_pick_strategy "ds" "$INSTALL_DIR/ipset/zapret-hosts-discord.txt" "Discord" ;;
-		11) is_installed && auto_pick_strategy "rkn" "$INSTALL_DIR/ipset/zapret-hosts.txt" "RKN" ;;
-		12) is_installed && run_blockcheck ;;
-		13) is_installed && test_strategies ;;
-		14) is_installed && set_mode_hostlist && update_user_lists && restart_service && pause_enter ;;
-		15)
+		3) is_installed && apply_preset "categories" "$(preset_categories)" ;;
+		4) is_installed && sync_category_lists && pause_enter ;;
+		5) is_installed && ensure_category_files && ${EDITOR:-vi} "$CATEGORIES_FILE" ;;
+		6) is_installed && auto_pick_strategy "yt" "$INSTALL_DIR/ipset/zapret-hosts-youtube.txt" "YouTube" ;;
+		7) is_installed && auto_pick_strategy "ds" "$INSTALL_DIR/ipset/zapret-hosts-discord.txt" "Discord" ;;
+		8) is_installed && auto_pick_strategy "rkn" "$INSTALL_DIR/ipset/zapret-hosts.txt" "RKN" ;;
+		9) is_installed && run_blockcheck ;;
+		10) is_installed && test_strategies ;;
+		11)
 			if is_installed; then
 				set_mode_hostlist
 				ensure_rkn_bootstrap_hosts
@@ -1235,11 +1462,10 @@ menu() {
 				pause_enter
 			fi
 			;;
-		16) is_installed && toggle_nfqws2 ;;
-		17) is_installed && restart_service && pause_enter ;;
-		18) show_status && pause_enter ;;
-		19) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
-		20) is_installed && ensure_extra_blobs && apply_preset "magisk" "$(preset_magisk)" ;;
+		12) is_installed && toggle_nfqws2 ;;
+		13) is_installed && restart_service && pause_enter ;;
+		14) show_status && pause_enter ;;
+		15) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
 		0|"") exit 0 ;;
 		*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
 	esac
