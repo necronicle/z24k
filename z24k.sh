@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-48"
+SCRIPT_VERSION="2026-01-07-50"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -419,7 +419,7 @@ extract_last_available() {
 	logfile="$1"
 	line=$(awk '
 		/^- curl_test_/ && $0 ~ / : nfqws2 / { cur=$0 }
-		/^AVAILABLE$/ && cur!="" { res=cur }
+		/AVAIL/ && $0 !~ /UNAVAIL/ && cur!="" { res=cur }
 		END { if (res!="") print res }
 	' "$logfile")
 	[ -n "$line" ] || return 1
