@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-55"
+SCRIPT_VERSION="2026-01-07-56"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -957,7 +957,7 @@ magisk_seqovl_opts() {
 	local file
 	file="$INSTALL_DIR/files/fake/tls_clienthello_www_google_com.bin"
 	if [ -f "$file" ] && [ -s "$file" ]; then
-		printf "%s" "--blob=tls_google:@$file --lua-desync=multisplit:seqovl=700:seqovl_pattern=tls_google:tcp_flags_unset=ack"
+		printf "%s" "--lua-desync=multisplit:seqovl=700:seqovl_pattern=tls_google:tcp_flags_unset=ack"
 	else
 		printf "%s" "--lua-desync=multisplit:seqovl=700:tcp_flags_unset=ack"
 	fi
@@ -970,11 +970,21 @@ EOF
 }
 
 build_opt_from_magisk_blocks() {
+	local prefix
+	prefix=$(magisk_blob_prefix)
 	yblock=$(magisk_block_youtube)
 	dblock=$(magisk_block_discord)
 	rblock=$(magisk_block_rkn)
 	vblock=$(magisk_block_discord_voice)
-	printf "%s\n%s\n%s\n%s\n" "$yblock" "$dblock" "$rblock" "$vblock"
+	printf "%s\n%s\n%s\n%s\n%s\n" "$prefix" "$yblock" "$dblock" "$rblock" "$vblock"
+}
+
+magisk_blob_prefix() {
+	local file
+	file="$INSTALL_DIR/files/fake/tls_clienthello_www_google_com.bin"
+	if [ -f "$file" ] && [ -s "$file" ]; then
+		printf "%s" "--blob=tls_google:@$file"
+	fi
 }
 
 build_opt_from_blocks() {
