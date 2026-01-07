@@ -410,7 +410,7 @@ update_user_lists() {
 update_rkn_list() {
 	local urls url tmpfile zdom ok
 	if [ -f "$INSTALL_DIR/ipset/def.sh" ]; then
-		. "$INSTALL_DIR/ipset/def.sh"
+		ZAPRET_BASE="$INSTALL_DIR" ZAPRET_RW="$INSTALL_DIR" . "$INSTALL_DIR/ipset/def.sh"
 	else
 		echo -e "${yellow}RKN updater not found.${plain}"
 		return 1
