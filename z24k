@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-59"
+SCRIPT_VERSION="2026-01-07-60"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1113,7 +1113,7 @@ ensure_blob_files() {
 		case "$line" in
 			""|\#*|";"*) continue ;;
 			--blob=*)
-				file=$(printf "%s" "$line" | sed -n 's/.*@bin\\///p')
+				file=${line##*@bin/}
 				[ -z "$file" ] && continue
 				if [ ! -s "$INSTALL_DIR/files/fake/$file" ]; then
 					fetch "$Z24K_RAW/files/fake/$file" "$INSTALL_DIR/files/fake/$file" || true
@@ -1139,7 +1139,8 @@ sync_category_lists() {
 				[ -n "$hostlist" ] && printf "%s\n" "$hostlist" >> "$tmp"
 				[ -n "$ipset" ] && printf "%s\n" "$ipset" >> "$tmp"
 			fi
-			current=$(printf "%s" "$line" | sed 's/^\[\(.*\)\]$/\1/')
+			current=${line#\[}
+			current=${current%\]}
 			hostlist=""
 			ipset=""
 			strategy=""
@@ -1174,7 +1175,7 @@ build_blob_prefix_from_file() {
 		case "$line" in
 			""|\#*|";"*) continue ;;
 			--blob=*)
-				out=$(printf "%s" "$line" | sed "s|@bin/|@$INSTALL_DIR/files/fake/|g")
+				out=${line//@bin\//@$INSTALL_DIR/files/fake/}
 				if [ -n "$prefix" ]; then
 					prefix="$prefix $out"
 				else
@@ -1286,7 +1287,8 @@ build_opt_from_categories() {
 					first=0
 				fi
 			fi
-			current=$(printf "%s" "$line" | sed 's/^\[\(.*\)\]$/\1/')
+			current=${line#\[}
+			current=${current%\]}
 			protocol="tcp"
 			hostlist=""
 			ipset=""
