@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-46"
+SCRIPT_VERSION="2026-01-07-48"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -418,9 +418,9 @@ extract_blockcheck_strategy() {
 extract_last_available() {
 	logfile="$1"
 	line=$(awk '
-		/^- curl_test_/ && $0 ~ / : nfqws2 / { last=$0 }
-		/AVAILABLE/ { avail=1 }
-		END { if (avail && last!="") print last }
+		/^- curl_test_/ && $0 ~ / : nfqws2 / { cur=$0 }
+		/^AVAILABLE$/ && cur!="" { res=cur }
+		END { if (res!="") print res }
 	' "$logfile")
 	[ -n "$line" ] || return 1
 	testname=$(echo "$line" | awk '{print $2}')
@@ -659,10 +659,13 @@ auto_pick_strategy() {
 		echo -n "Идет подбор"
 		found_tls=""
 		found_quic=""
+		last_entry=""
 		while kill -0 "$pid" 2>/dev/null; do
 			printf "."
 			entry=$(extract_last_available "$logfile" || true)
 			if [ -n "$entry" ]; then
+				[ "$entry" = "$last_entry" ] && { sleep 2; continue; }
+				last_entry="$entry"
 				testname=${entry%%|*}
 				strategy=${entry#*|}
 				case "$testname" in
