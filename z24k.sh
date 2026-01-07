@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-17"
+SCRIPT_VERSION="2026-01-07-18"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -496,6 +496,15 @@ update_rkn_list() {
 		return 1
 	fi
 
+	if [ -f "$INSTALL_DIR/domains-export.txt" ]; then
+		log "Using local RKN list: $INSTALL_DIR/domains-export.txt"
+		if [ -s "$INSTALL_DIR/domains-export.txt" ]; then
+			sort -u "$INSTALL_DIR/domains-export.txt" | zz "$ZHOSTLIST"
+			hup_zapret_daemons
+			return 0
+		fi
+	fi
+
 	if [ -n "$Z24K_RKN_URLS" ]; then
 		urls="$Z24K_RKN_URLS"
 	else
@@ -504,7 +513,7 @@ https://antizapret.prostovpn.org:8443/domains-export.txt \
 https://antizapret.prostovpn.org/domains-export.txt"
 	fi
 
-	log "Updating RKN list (mirrors)"
+	log "Updating RKN list (bundled+mirrors)"
 	ok=0
 	tmpbase="${TMPDIR:-$TMP_DIR}"
 	mkdir -p "$tmpbase"
