@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-32"
+SCRIPT_VERSION="2026-01-07-33"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -377,6 +377,13 @@ last_nonempty_line_any() {
 	fi
 }
 
+get_rkn_hostlist_path() {
+	if [ -f "$INSTALL_DIR/ipset/def.sh" ]; then
+		ZAPRET_BASE="$INSTALL_DIR" ZAPRET_RW="$INSTALL_DIR" . "$INSTALL_DIR/ipset/def.sh"
+	fi
+	echo "${ZHOSTLIST:-$INSTALL_DIR/ipset/zapret-hosts.txt}"
+}
+
 extract_blockcheck_strategy() {
 	testname="$1"
 	logfile="$2"
@@ -551,6 +558,13 @@ auto_pick_strategy() {
 	logfile="${TMPDIR:-/tmp}/z24k-blockcheck-${list_key}.log"
 
 	ensure_split_hostlists
+	if [ "$list_key" = "rkn" ]; then
+		list_file=$(get_rkn_hostlist_path)
+		if [ -z "$(last_nonempty_line_any "$list_file")" ]; then
+			ensure_rkn_bootstrap_hosts
+			update_rkn_list || true
+		fi
+	fi
 	domain=$(last_nonempty_line_any "$list_file")
 	if [ -z "$domain" ]; then
 		echo -e "${yellow}Список пустой: $list_file${plain}"
