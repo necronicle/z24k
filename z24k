@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-34"
+SCRIPT_VERSION="2026-01-07-36"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -589,16 +589,14 @@ auto_pick_strategy() {
 			ensure_rkn_bootstrap_hosts
 			update_rkn_list || true
 		fi
-	fi
-	if [ "$list_key" = "rkn" ]; then
-		domain=$(last_nonempty_line_hostlist "$list_file")
+		domain="rutracker.org"
 	else
 		domain=$(last_nonempty_line_any "$list_file")
-	fi
-	if [ -z "$domain" ]; then
-		echo -e "${yellow}Список пустой: $list_file${plain}"
-		pause_enter
-		return
+		if [ -z "$domain" ]; then
+			echo -e "${yellow}Список пустой: $list_file${plain}"
+			pause_enter
+			return
+		fi
 	fi
 
 	if [ -x "$SERVICE" ]; then
