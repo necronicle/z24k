@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-15"
+SCRIPT_VERSION="2026-01-07-16"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -313,7 +313,11 @@ do_uninstall() {
 
 preset_default() {
 	if [ -f "$CONFIG_DEFAULT" ]; then
-		get_opt_block "$CONFIG_DEFAULT"
+		opt=$(get_opt_block "$CONFIG_DEFAULT" 2>/dev/null || true)
+		if [ -n "$opt" ]; then
+			printf "%s\n" "$opt"
+			return
+		fi
 	else
 		cat <<'EOF'
 --filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2 --new
@@ -352,7 +356,13 @@ apply_preset_quiet() {
 	set_opt_block "$opt"
 	set_kv NFQWS2_ENABLE 1
 	set_kv Z24K_PRESET "$name"
-	restart_service
+	restart_service_quiet
+}
+
+restart_service_quiet() {
+	if [ -x "$SERVICE" ]; then
+		"$SERVICE" restart >/dev/null 2>&1
+	fi
 }
 
 apply_preset() {
@@ -369,8 +379,9 @@ apply_preset() {
 
 test_url() {
 	url="$1"
-	code=$(curl -k --max-time 8 --connect-timeout 5 -s -o /dev/null -w "%{http_code}" "$url" || echo 000)
-	if [ "$code" = "000" ]; then
+	code=$(curl -k --max-time 8 --connect-timeout 5 -s -o /dev/null -w "%{http_code}" "$url")
+	rc=$?
+	if [ "$rc" -ne 0 ] || [ "$code" = "000" ]; then
 		printf "%-50s %s\n" "$url" "FAIL"
 	elif [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then
 		printf "%-50s %s\n" "$url" "OK ($code)"
@@ -387,11 +398,13 @@ test_strategies() {
 	fi
 	set_mode_hostlist
 	ensure_hostlist_file
-	update_user_lists
+	log "Preparing hostlist"
+	update_user_lists >/dev/null 2>&1 || true
 	urls="https://www.youtube.com/ https://discord.com/ https://discord.gg/ https://antizapret.prostovpn.org:8443/domains-export.txt https://antizapret.prostovpn.org/domains-export.txt"
 	for name in universal default aggressive minimal; do
-		echo ""
-		echo -e "${cyan}Testing strategy: ${green}${name}${plain}"
+		ok=0
+		total=0
+		echo -e "${cyan}Testing: ${green}${name}${plain}"
 		case "$name" in
 			universal) apply_preset_quiet "$name" "$(preset_universal)" ;;
 			default) apply_preset_quiet "$name" "$(preset_default)" ;;
@@ -399,8 +412,13 @@ test_strategies() {
 			minimal) apply_preset_quiet "$name" "$(preset_minimal)" ;;
 		esac
 		for url in $urls; do
-			test_url "$url"
+			total=$((total + 1))
+			out=$(test_url "$url")
+			echo "$out"
+			echo "$out" | grep -q "OK (" && ok=$((ok + 1))
 		done
+		echo -e "${green}Result:${plain} ${ok}/${total} OK"
+		echo ""
 	done
 	pause_enter
 }
