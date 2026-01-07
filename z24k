@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-28"
+SCRIPT_VERSION="2026-01-07-29"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -689,39 +689,39 @@ show_status() {
 		running="running"
 	fi
 
-	echo -e "${cyan}--- Status ---${plain}"
-	echo "Installed: $installed"
-	echo "Preset: $preset"
+	echo -e "${cyan}--- Статус ---${plain}"
+	echo "Установлено: $installed"
+	echo "Пресет: $preset"
 	echo "NFQWS2_ENABLE: $enable"
 	echo "nfqws2: $running"
 }
 
 menu() {
 	safe_clear
-	echo -e "${cyan}--- z24k menu ---${plain}"
+	echo -e "${cyan}--- z24k меню ---${plain}"
 	show_status
 	echo ""
-	menu_item "1" "Install/Update" ""
-	menu_item "2" "Uninstall" ""
+	menu_item "1" "Установка/Обновление" ""
+	menu_item "2" "Удаление" ""
 	if is_installed; then
-		menu_item "3" "Strategy: Universal (split lists)" ""
-		menu_item "4" "Strategy: Default" ""
-		menu_item "5" "Strategy: Manual" ""
-		menu_item "6" "Strategy: Manual+Blobs" ""
-		menu_item "7" "Strategy: Aggressive" ""
-		menu_item "8" "Strategy: Minimal (no QUIC)" ""
-		menu_item "9" "Run blockcheck2 (interactive)" ""
-		menu_item "10" "Test strategies (auto)" ""
-		menu_item "11" "Update lists YT/Discord" ""
-		menu_item "12" "Update list RKN" ""
-		menu_item "13" "Toggle NFQWS2" ""
-		menu_item "14" "Restart service" ""
-		menu_item "15" "Show status" ""
-		menu_item "16" "Edit config" ""
+		menu_item "3" "Стратегия: Universal (split lists)" ""
+		menu_item "4" "Стратегия: Default" ""
+		menu_item "5" "Стратегия: Manual" ""
+		menu_item "6" "Стратегия: Manual+Blobs" ""
+		menu_item "7" "Стратегия: Aggressive" ""
+		menu_item "8" "Стратегия: Minimal (без QUIC)" ""
+		menu_item "9" "Запустить blockcheck2 (интерактивно)" ""
+		menu_item "10" "Тест стратегий (авто)" ""
+		menu_item "11" "Обновить списки YT/Discord" ""
+		menu_item "12" "Обновить список RKN" ""
+		menu_item "13" "Вкл/Выкл NFQWS2" ""
+		menu_item "14" "Перезапуск сервиса" ""
+		menu_item "15" "Показать статус" ""
+		menu_item "16" "Редактировать config" ""
 	fi
-	menu_item "0" "Exit" ""
+	menu_item "0" "Выход" ""
 	echo ""
-	read_tty "Select: " ans
+	read_tty "Ваш выбор: " ans
 
 	case "$ans" in
 		1) do_install ;;
@@ -752,7 +752,7 @@ menu() {
 		15) show_status && pause_enter ;;
 		16) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
 		0|"") exit 0 ;;
-		*) echo -e "${yellow}Invalid choice.${plain}"; sleep 1 ;;
+		*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
 	esac
 
 	menu
