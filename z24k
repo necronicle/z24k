@@ -459,7 +459,7 @@ ensure_hostlist_file() {
 }
 
 update_rkn_list() {
-	local urls url tmpfile zdom ok
+	local urls url tmpfile zdom ok tmpbase
 	if [ -f "$INSTALL_DIR/ipset/def.sh" ]; then
 		ZAPRET_BASE="$INSTALL_DIR" ZAPRET_RW="$INSTALL_DIR" . "$INSTALL_DIR/ipset/def.sh"
 	else
@@ -476,12 +476,15 @@ https://antizapret.prostovpn.org/domains-export.txt"
 
 	log "Updating RKN list (mirrors)"
 	ok=0
-	tmpfile="$TMPDIR/zapret.txt.gz"
-	zdom="$TMPDIR/zapret.txt"
+	tmpbase="${TMPDIR:-$TMP_DIR}"
+	mkdir -p "$tmpbase"
+	tmpfile="$tmpbase/zapret.txt.gz"
+	zdom="$tmpbase/zapret.txt"
 
 	for url in $urls; do
 		rm -f "$tmpfile" "$zdom"
-		if curl -k --fail --max-time 600 --connect-timeout 5 --retry 2 "$url" -o "$tmpfile"; then
+		log "Downloading: $url"
+		if curl -k --fail --connect-timeout 5 --max-time 25 --retry 2 "$url" -o "$tmpfile"; then
 			if gunzip -t "$tmpfile" >/dev/null 2>&1; then
 				gunzip -c "$tmpfile" > "$zdom" || true
 			else
