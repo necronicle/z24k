@@ -23,8 +23,16 @@ log() {
 	echo "[z24k] $*"
 }
 
+read_tty() {
+	if [ -r /dev/tty ]; then
+		read -r -p "$1" "$2" </dev/tty
+	else
+		read -r -p "$1" "$2"
+	fi
+}
+
 pause_enter() {
-	read -r -p "Enter для продолжения" _
+	read_tty "Enter для продолжения" _
 }
 
 menu_item() {
@@ -367,7 +375,7 @@ menu() {
 			menu_item "0" "Выход" ""
 		fi
 		echo ""
-		read -r -p "Ваш выбор: " ans
+		read_tty "Ваш выбор: " ans
 
 		case "$ans" in
 			1) do_install ;;

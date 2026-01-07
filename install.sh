@@ -15,4 +15,8 @@ else
 fi
 
 chmod +x "$TMP_MENU"
-exec "$TMP_MENU"
+if [ -r /dev/tty ]; then
+	exec "$TMP_MENU" </dev/tty
+else
+	exec "$TMP_MENU"
+fi
