@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-19"
+SCRIPT_VERSION="2026-01-07-20"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -10,6 +10,7 @@ KEENETIC_RAW="$Z24K_RAW/keenetic"
 LISTS_RAW="$Z24K_RAW/lists"
 INSTALL_DIR="/opt/zapret2"
 TMP_DIR="/tmp/zapret2-install"
+STRAT_DIR="$INSTALL_DIR/strategies"
 
 CONFIG="$INSTALL_DIR/config"
 CONFIG_DEFAULT="$INSTALL_DIR/config.default"
@@ -322,20 +323,7 @@ EOF
 }
 
 preset_universal() {
-	cat <<'EOF'
---filter-tcp=80 --filter-l7=http --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-2,3-20:ip6_autottl=-2,3-20:tcp_md5 --lua-desync=fakedsplit:ip_autottl=-2,3-20:ip6_autottl=-2,3-20:tcp_md5 --new
---filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:tcp_seq=-10000:repeats=6 --lua-desync=multidisorder:pos=midsld --new
---filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=11
-
---filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-discord.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:repeats=11:tls_mod=rnd,dupsid,padencap --lua-desync=multidisorder:pos=midsld --new
---filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts-discord.txt --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=11
-
---filter-tcp=80 --filter-l7=http --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5:ip_autottl=-2,3-20 --lua-desync=fakedsplit:ip_autottl=-2,3-20:tcp_md5 --new
---filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:repeats=11:tls_mod=rnd,dupsid,padencap --lua-desync=multidisorder:pos=midsld --new
---filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=11
-
---filter-udp=3478,50000-65535 --filter-l7=stun,discord --payload=stun,discord_ip_discovery --lua-desync=fake:blob=0x00000000000000000000000000000000:repeats=2
-EOF
+	build_opt_from_blocks
 }
 preset_minimal() {
 	cat <<'EOF'
@@ -431,6 +419,202 @@ test_strategies() {
 	if [ -f "$TMP_DIR/config.test.bak" ]; then
 		cp -f "$TMP_DIR/config.test.bak" "$CONFIG"
 		restart_service_quiet
+	fi
+	pause_enter
+}
+
+default_block_youtube() {
+	cat <<'EOF'
+--filter-tcp=80 --filter-l7=http --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-2,3-20:ip6_autottl=-2,3-20:tcp_md5 --lua-desync=fakedsplit:ip_autottl=-2,3-20:ip6_autottl=-2,3-20:tcp_md5 --new
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:tcp_seq=-10000:repeats=6 --lua-desync=multidisorder:pos=midsld --new
+--filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=11
+EOF
+}
+
+default_block_discord() {
+	cat <<'EOF'
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-discord.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:repeats=11:tls_mod=rnd,dupsid,padencap --lua-desync=multidisorder:pos=midsld --new
+--filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts-discord.txt --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=11
+EOF
+}
+
+default_block_rkn() {
+	cat <<'EOF'
+--filter-tcp=80 --filter-l7=http --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5:ip_autottl=-2,3-20 --lua-desync=fakedsplit:ip_autottl=-2,3-20:tcp_md5 --new
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:repeats=11:tls_mod=rnd,dupsid,padencap --lua-desync=multidisorder:pos=midsld --new
+--filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=11
+EOF
+}
+
+default_block_discord_voice() {
+	cat <<'EOF'
+--filter-udp=3478,50000-65535 --filter-l7=stun,discord --payload=stun,discord_ip_discovery --lua-desync=fake:blob=0x00000000000000000000000000000000:repeats=2
+EOF
+}
+
+get_block() {
+	list="$1"
+	file="$STRAT_DIR/$list.txt"
+	if [ -f "$file" ]; then
+		cat "$file"
+		return
+	fi
+	case "$list" in
+		youtube) default_block_youtube ;;
+		discord) default_block_discord ;;
+		rkn) default_block_rkn ;;
+	esac
+}
+
+build_opt_from_blocks() {
+	yblock=$(get_block youtube)
+	dblock=$(get_block discord)
+	rblock=$(get_block rkn)
+	vblock=$(default_block_discord_voice)
+	printf "%s\n%s\n%s\n%s\n" "$yblock" "$dblock" "$rblock" "$vblock"
+}
+
+build_opt_override() {
+	list="$1"
+	block="$2"
+	yblock=$(get_block youtube)
+	dblock=$(get_block discord)
+	rblock=$(get_block rkn)
+	case "$list" in
+		youtube) yblock="$block" ;;
+		discord) dblock="$block" ;;
+		rkn) rblock="$block" ;;
+	esac
+	vblock=$(default_block_discord_voice)
+	printf "%s\n%s\n%s\n%s\n" "$yblock" "$dblock" "$rblock" "$vblock"
+}
+
+save_block() {
+	list="$1"
+	block="$2"
+	mkdir -p "$STRAT_DIR"
+	printf "%s\n" "$block" > "$STRAT_DIR/$list.txt"
+}
+
+default_rkn_test_url() {
+	if [ -s "$INSTALL_DIR/ipset/zapret-hosts.txt" ]; then
+		dom=$(head -n 1 "$INSTALL_DIR/ipset/zapret-hosts.txt")
+		printf "https://%s/\n" "$dom"
+	else
+		echo "https://example.com/"
+	fi
+}
+
+yt_candidate_1() { default_block_youtube; }
+yt_candidate_2() {
+	cat <<'EOF'
+--filter-tcp=80 --filter-l7=http --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5:ip_autottl=-2,3-20 --lua-desync=multisplit:pos=method+2 --new
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:repeats=11:tls_mod=rnd,dupsid,padencap --lua-desync=multidisorder:pos=midsld --new
+--filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=11
+EOF
+}
+yt_candidate_3() {
+	cat <<'EOF'
+--filter-tcp=80 --filter-l7=http --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2 --new
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-youtube.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:tcp_seq=-10000:repeats=6 --lua-desync=multidisorder:pos=1,midsld --new
+EOF
+}
+
+dc_candidate_1() { default_block_discord; }
+dc_candidate_2() {
+	cat <<'EOF'
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-discord.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:tcp_seq=-10000:repeats=6 --lua-desync=multidisorder:pos=midsld --new
+--filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts-discord.txt --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=11
+EOF
+}
+dc_candidate_3() {
+	cat <<'EOF'
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-discord.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:repeats=11:tls_mod=rnd,dupsid --lua-desync=multidisorder:pos=midsld --new
+--filter-udp=443 --filter-l7=quic --hostlist=/opt/zapret2/ipset/zapret-hosts-discord.txt --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=6
+EOF
+}
+
+rkn_candidate_1() { default_block_rkn; }
+rkn_candidate_2() {
+	cat <<'EOF'
+--filter-tcp=80 --filter-l7=http --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2 --new
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:tcp_seq=-10000:repeats=6 --lua-desync=multidisorder:pos=1,midsld --new
+EOF
+}
+rkn_candidate_3() {
+	cat <<'EOF'
+--filter-tcp=80 --filter-l7=http --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5:ip_autottl=-2,3-20 --lua-desync=fakedsplit:ip_autottl=-2,3-20:tcp_md5 --new
+--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:repeats=11:tls_mod=rnd,dupsid,padencap --lua-desync=multidisorder:pos=midsld --new
+EOF
+}
+
+generate_strategy() {
+	list="$1"
+	label="$2"
+	defurl="$3"
+	if ! need_cmd curl; then
+		echo "curl is required for tests."
+		pause_enter
+		return
+	fi
+	if [ -f "$CONFIG" ]; then
+		mkdir -p "$TMP_DIR"
+		cp -f "$CONFIG" "$TMP_DIR/config.gen.bak"
+	fi
+	ensure_split_hostlists
+	set_mode_hostlist
+	read_tty "Test URL [$defurl]: " url
+	[ -z "$url" ] && url="$defurl"
+
+	case "$list" in
+		youtube) candidates="1 2 3" ;;
+		discord) candidates="1 2 3" ;;
+		rkn) candidates="1 2 3" ;;
+	esac
+
+	echo -e "${cyan}Generating for ${green}${label}${plain}"
+	saved=0
+	for id in $candidates; do
+		case "$list-$id" in
+			youtube-1) block=$(yt_candidate_1) ;;
+			youtube-2) block=$(yt_candidate_2) ;;
+			youtube-3) block=$(yt_candidate_3) ;;
+			discord-1) block=$(dc_candidate_1) ;;
+			discord-2) block=$(dc_candidate_2) ;;
+			discord-3) block=$(dc_candidate_3) ;;
+			rkn-1) block=$(rkn_candidate_1) ;;
+			rkn-2) block=$(rkn_candidate_2) ;;
+			rkn-3) block=$(rkn_candidate_3) ;;
+		esac
+
+		opt=$(build_opt_override "$list" "$block")
+		set_opt_block "$opt"
+		set_kv NFQWS2_ENABLE 1
+		set_kv Z24K_PRESET universal
+		restart_service_quiet
+
+		out=$(test_url "$url")
+		echo "$out"
+		read_tty "Save? (s)ave/(n)ext/(q)uit: " ans
+		case "$ans" in
+			s|S)
+				save_block "$list" "$block"
+				saved=1
+				break
+				;;
+			q|Q) break ;;
+		esac
+	done
+
+	if [ "$saved" -eq 1 ]; then
+		opt=$(build_opt_from_blocks)
+		set_opt_block "$opt"
+		restart_service_quiet
+	else
+		if [ -f "$TMP_DIR/config.gen.bak" ]; then
+			cp -f "$TMP_DIR/config.gen.bak" "$CONFIG"
+			restart_service_quiet
+		fi
 	fi
 	pause_enter
 }
@@ -614,12 +798,15 @@ menu() {
 			menu_item "5" "Стратегия: Aggressive" ""
 			menu_item "6" "Стратегия: Minimal (без QUIC)" ""
 			menu_item "7" "Тест стратегий (авто)" ""
-			menu_item "8" "Обновить списки YT/Discord" ""
-			menu_item "9" "Обновить список RKN" ""
-			menu_item "10" "Вкл/Выкл NFQWS2" ""
-			menu_item "11" "Перезапуск сервиса" ""
-			menu_item "12" "Показать статус" ""
-			menu_item "13" "Редактировать config" ""
+			menu_item "8" "Генератор: YouTube" ""
+			menu_item "9" "Генератор: Discord" ""
+			menu_item "10" "Генератор: RKN" ""
+			menu_item "11" "Обновить списки YT/Discord" ""
+			menu_item "12" "Обновить список RKN" ""
+			menu_item "13" "Вкл/Выкл NFQWS2" ""
+			menu_item "14" "Перезапуск сервиса" ""
+			menu_item "15" "Показать статус" ""
+			menu_item "16" "Редактировать config" ""
 			menu_item "0" "Выход" ""
 		else
 			menu_item "0" "Выход" ""
@@ -635,12 +822,15 @@ menu() {
 			5) is_installed && apply_preset "aggressive" "$(preset_aggressive)" ;;
 			6) is_installed && apply_preset "minimal" "$(preset_minimal)" ;;
 			7) is_installed && test_strategies ;;
-			8) is_installed && set_mode_hostlist && update_user_lists && restart_service && pause_enter ;;
-			9) is_installed && set_mode_hostlist && ensure_rkn_bootstrap_hosts && restart_service && { update_rkn_list || log "RKN update failed. You can retry from the menu."; } && restart_service && pause_enter ;;
-			10) is_installed && toggle_nfqws2 ;;
-			11) is_installed && restart_service && pause_enter ;;
-			12) show_status && pause_enter ;;
-			13) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
+			8) is_installed && generate_strategy youtube "YouTube" "https://www.youtube.com/" ;;
+			9) is_installed && generate_strategy discord "Discord" "https://discord.com/" ;;
+			10) is_installed && generate_strategy rkn "RKN" "$(default_rkn_test_url)" ;;
+			11) is_installed && set_mode_hostlist && update_user_lists && restart_service && pause_enter ;;
+			12) is_installed && set_mode_hostlist && ensure_rkn_bootstrap_hosts && restart_service && { update_rkn_list || log "RKN update failed. You can retry from the menu."; } && restart_service && pause_enter ;;
+			13) is_installed && toggle_nfqws2 ;;
+			14) is_installed && restart_service && pause_enter ;;
+			15) show_status && pause_enter ;;
+			16) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
 			0|"") exit 0 ;;
 			*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
 		esac
