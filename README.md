@@ -25,6 +25,9 @@ After install:
 - Menu: run `z24k` to select strategies and manage service
 - Default mode: hostlist (RKN + YouTube + Discord lists)
 
+RKN list mirrors:
+- Set `Z24K_RKN_URLS` in `/opt/zapret2/config` to override mirrors (space-separated URLs)
+
 Alternate entrypoint (same behavior):
 
 ```

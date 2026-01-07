@@ -366,12 +366,50 @@ update_user_lists() {
 }
 
 update_rkn_list() {
-	if [ -x "$INSTALL_DIR/ipset/get_antizapret_domains.sh" ]; then
-		log "Updating RKN list (antizapret)"
-		"$INSTALL_DIR/ipset/get_antizapret_domains.sh" || true
+	local urls url tmpfile zdom ok
+	if [ -f "$INSTALL_DIR/ipset/def.sh" ]; then
+		. "$INSTALL_DIR/ipset/def.sh"
 	else
 		echo -e "${yellow}RKN updater not found.${plain}"
+		return 1
 	fi
+
+	if [ -n "$Z24K_RKN_URLS" ]; then
+		urls="$Z24K_RKN_URLS"
+	else
+		urls="https://antizapret.prostovpn.org:8443/domains-export.txt \
+https://antizapret.prostovpn.org/domains-export.txt"
+	fi
+
+	log "Updating RKN list (mirrors)"
+	ok=0
+	tmpfile="$TMPDIR/zapret.txt.gz"
+	zdom="$TMPDIR/zapret.txt"
+
+	for url in $urls; do
+		rm -f "$tmpfile" "$zdom"
+		if curl -k --fail --max-time 600 --connect-timeout 5 --retry 2 "$url" -o "$tmpfile"; then
+			if gunzip -t "$tmpfile" >/dev/null 2>&1; then
+				gunzip -c "$tmpfile" > "$zdom" || true
+			else
+				cp -f "$tmpfile" "$zdom"
+			fi
+			if [ -s "$zdom" ]; then
+				sort -u "$zdom" | zz "$ZHOSTLIST"
+				ok=1
+				break
+			fi
+		fi
+	done
+
+	rm -f "$tmpfile" "$zdom"
+	if [ "$ok" -eq 1 ]; then
+		hup_zapret_daemons
+		return 0
+	fi
+
+	echo -e "${yellow}RKN list update failed (all mirrors).${plain}"
+	return 1
 }
 
 is_installed() {
