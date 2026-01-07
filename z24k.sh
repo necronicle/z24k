@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-51"
+SCRIPT_VERSION="2026-01-07-52"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -444,8 +444,10 @@ extract_last_available() {
 run_blockcheck_background() {
 	logfile="$1"
 	if command -v setsid >/dev/null 2>&1; then
+		BLOCKCHECK_SETSID=1
 		setsid sh "$INSTALL_DIR/blockcheck2.sh" >"$logfile" 2>&1 &
 	else
+		BLOCKCHECK_SETSID=0
 		sh "$INSTALL_DIR/blockcheck2.sh" >"$logfile" 2>&1 &
 	fi
 	BLOCKCHECK_PID=$!
@@ -453,11 +455,17 @@ run_blockcheck_background() {
 
 stop_blockcheck() {
 	pid="$1"
-	if command -v setsid >/dev/null 2>&1; then
+	if [ "$BLOCKCHECK_SETSID" = "1" ]; then
 		kill -TERM -"$pid" 2>/dev/null || true
 		sleep 1
 		kill -KILL -"$pid" 2>/dev/null || true
 	else
+		if command -v pkill >/dev/null 2>&1; then
+			pkill -P "$pid" 2>/dev/null || true
+		fi
+		if command -v killall >/dev/null 2>&1; then
+			killall blockcheck2.sh 2>/dev/null || true
+		fi
 		kill "$pid" 2>/dev/null || true
 	fi
 	wait "$pid" 2>/dev/null || true
