@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-58"
+SCRIPT_VERSION="2026-01-07-59"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -326,17 +326,21 @@ do_install() {
 	install_extras
 	install_menu
 
+	ensure_category_files
+	sync_category_lists
+	ensure_blob_files
+
 	if [ "$HAD_CONFIG" -eq 0 ]; then
 		sed -i 's/^NFQWS2_ENABLE=0/NFQWS2_ENABLE=1/' "$CONFIG"
-		set_kv Z24K_PRESET universal
+		set_kv Z24K_PRESET categories
 		set_mode_hostlist
+		set_opt_block "$(preset_categories)"
 	fi
 
 	if [ -x /opt/etc/init.d/S00fix ]; then
 		/opt/etc/init.d/S00fix start || true
 	fi
 
-	update_user_lists
 	"$SERVICE" restart
 	if ! update_rkn_list; then
 		log "RKN update failed. You can retry from the menu."
