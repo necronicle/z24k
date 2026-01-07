@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-7"
+SCRIPT_VERSION="2026-01-07-8"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_RAW="https://github.com/necronicle/z24k/raw/master"
@@ -183,10 +183,17 @@ set_ws_user() {
 
 install_menu() {
 	log "Installing menu"
-	mkdir -p "$INSTALL_DIR"
-	cp -f "$0" "$INSTALL_DIR/z24k.sh"
+	mkdir -p "$INSTALL_DIR" /opt/bin
+	if [ -f "$0" ]; then
+		cp -f "$0" "$INSTALL_DIR/z24k.sh"
+	else
+		fetch "$Z24K_RAW/z24k.sh" "$INSTALL_DIR/z24k.sh"
+	fi
+	if [ ! -f "$INSTALL_DIR/z24k.sh" ]; then
+		echo "Failed to install menu script" >&2
+		return 1
+	fi
 	chmod +x "$INSTALL_DIR/z24k.sh"
-	mkdir -p /opt/bin
 	ln -sf "$INSTALL_DIR/z24k.sh" /opt/bin/z24k
 }
 
