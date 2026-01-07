@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-40"
+SCRIPT_VERSION="2026-01-07-41"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -610,31 +610,32 @@ auto_pick_strategy() {
 			sh "$INSTALL_DIR/blockcheck2.sh" >"$logfile" 2>&1 &
 		pid=$!
 		echo -n "Идет подбор"
-		found=""
+		found_tls=""
+		found_quic=""
 		while kill -0 "$pid" 2>/dev/null; do
 			printf "."
 			if grep -q "working strategy found" "$logfile" 2>/dev/null; then
-				found=$(extract_blockcheck_strategy "curl_test_https_tls13" "$logfile" || true)
-				[ -z "$found" ] && found=$(extract_blockcheck_strategy "curl_test_https_tls12" "$logfile" || true)
-				[ -z "$found" ] && found=$(extract_blockcheck_strategy "curl_test_http" "$logfile" || true)
-				[ -z "$found" ] && found=$(extract_blockcheck_strategy "curl_test_http3" "$logfile" || true)
-				kill "$pid" 2>/dev/null || true
-				wait "$pid" 2>/dev/null || true
-				break
+				found_tls=$(extract_blockcheck_strategy "curl_test_https_tls13" "$logfile" || true)
+				[ -z "$found_tls" ] && found_tls=$(extract_blockcheck_strategy "curl_test_https_tls12" "$logfile" || true)
+				found_quic=$(extract_blockcheck_strategy "curl_test_http3" "$logfile" || true)
+				if [ -n "$found_tls" ] || [ -n "$found_quic" ]; then
+					kill "$pid" 2>/dev/null || true
+					wait "$pid" 2>/dev/null || true
+					break
+				fi
 			fi
 			sleep 2
 		done
 		echo ""
 		wait "$pid" 2>/dev/null || true
 
-		if [ -n "$found" ]; then
+		if [ -n "$found_tls" ] || [ -n "$found_quic" ]; then
 			echo -e "${green}Найдена стратегия.${plain}"
 			read_tty "Сохранить (s), продолжить (c) или выйти (q)? " choice
 			case "$choice" in
 				s|S)
-					http_strat="$found"
-					tls_strat="$found"
-					quic_strat="$found"
+					[ -n "$found_tls" ] && tls_strat="$found_tls"
+					[ -n "$found_quic" ] && quic_strat="$found_quic"
 					break
 					;;
 				c|C)
@@ -648,8 +649,7 @@ auto_pick_strategy() {
 		fi
 	done
 
-	if [ -z "$http_strat" ] && [ -z "$tls_strat" ] && [ -z "$quic_strat" ]; then
-		http_strat=$(extract_blockcheck_strategy "curl_test_http" "$logfile" || true)
+	if [ -z "$tls_strat" ] && [ -z "$quic_strat" ]; then
 		tls13_strat=$(extract_blockcheck_strategy "curl_test_https_tls13" "$logfile" || true)
 		tls12_strat=$(extract_blockcheck_strategy "curl_test_https_tls12" "$logfile" || true)
 		quic_strat=$(extract_blockcheck_strategy "curl_test_http3" "$logfile" || true)
@@ -658,7 +658,7 @@ auto_pick_strategy() {
 		[ -z "$tls_strat" ] && tls_strat="$tls12_strat"
 	fi
 
-	if [ -z "$http_strat" ] && [ -z "$tls_strat" ] && [ -z "$quic_strat" ]; then
+	if [ -z "$tls_strat" ] && [ -z "$quic_strat" ]; then
 		echo -e "${yellow}Стратегия не найдена. Лог: $logfile${plain}"
 		pause_enter
 		return
