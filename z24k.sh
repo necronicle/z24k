@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-10"
+SCRIPT_VERSION="2026-01-07-11"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -29,14 +29,20 @@ log() {
 
 read_tty() {
 	if [ -r /dev/tty ]; then
-		read -r -p "$1" "$2" </dev/tty
+		read -r -p "$1" "$2" </dev/tty || true
 	else
-		read -r -p "$1" "$2"
+		read -r -p "$1" "$2" || true
 	fi
 }
 
 pause_enter() {
 	read_tty "Enter для продолжения" _
+}
+
+safe_clear() {
+	if command -v clear >/dev/null 2>&1; then
+		clear || true
+	fi
 }
 
 menu_item() {
@@ -476,7 +482,7 @@ show_status() {
 
 menu() {
 	while :; do
-		clear
+		safe_clear
 		echo -e "${cyan}--- z24k меню ---${plain}"
 		show_status
 		echo ""
