@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-5"
+SCRIPT_VERSION="2026-01-07-6"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_RAW="https://github.com/necronicle/z24k/raw/master"
@@ -24,7 +24,7 @@ log() {
 }
 
 pause_enter() {
-	read -re -p "Enter для продолжения" _
+	read -r -p "Enter для продолжения" _
 }
 
 menu_item() {
@@ -308,6 +308,20 @@ toggle_nfqws2() {
 	pause_enter
 }
 
+do_uninstall() {
+	echo -e "${yellow}Удаление zapret2 и сервисов...${plain}"
+	if [ -x "$SERVICE" ]; then
+		"$SERVICE" stop || true
+	fi
+	rm -f /opt/etc/init.d/S90-zapret2
+	rm -f /opt/etc/ndm/netfilter.d/000-zapret2.sh
+	rm -f /opt/etc/init.d/S00fix
+	rm -f /opt/bin/z24k
+	rm -rf "$INSTALL_DIR"
+	echo -e "${green}Удаление завершено.${plain}"
+	pause_enter
+}
+
 is_installed() {
 	[ -f "$CONFIG" ] && [ -x "$SERVICE" ]
 }
@@ -339,30 +353,32 @@ menu() {
 		echo ""
 
 		menu_item "1" "Установка/Обновление" ""
+		menu_item "2" "Удаление" ""
 		if is_installed; then
-			menu_item "2" "Стратегия: Default" ""
-			menu_item "3" "Стратегия: Aggressive" ""
-			menu_item "4" "Стратегия: Minimal (без QUIC)" ""
-			menu_item "5" "Вкл/Выкл NFQWS2" ""
-			menu_item "6" "Перезапуск сервиса" ""
-			menu_item "7" "Показать статус" ""
-			menu_item "8" "Редактировать config" ""
+			menu_item "3" "Стратегия: Default" ""
+			menu_item "4" "Стратегия: Aggressive" ""
+			menu_item "5" "Стратегия: Minimal (без QUIC)" ""
+			menu_item "6" "Вкл/Выкл NFQWS2" ""
+			menu_item "7" "Перезапуск сервиса" ""
+			menu_item "8" "Показать статус" ""
+			menu_item "9" "Редактировать config" ""
 			menu_item "0" "Выход" ""
 		else
 			menu_item "0" "Выход" ""
 		fi
 		echo ""
-		read -re -p "Ваш выбор: " ans
+		read -r -p "Ваш выбор: " ans
 
 		case "$ans" in
 			1) do_install ;;
-			2) is_installed && apply_preset "default" "$(preset_default)" ;;
-			3) is_installed && apply_preset "aggressive" "$(preset_aggressive)" ;;
-			4) is_installed && apply_preset "minimal" "$(preset_minimal)" ;;
-			5) is_installed && toggle_nfqws2 ;;
-			6) is_installed && restart_service && pause_enter ;;
-			7) show_status && pause_enter ;;
-			8) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
+			2) do_uninstall ;;
+			3) is_installed && apply_preset "default" "$(preset_default)" ;;
+			4) is_installed && apply_preset "aggressive" "$(preset_aggressive)" ;;
+			5) is_installed && apply_preset "minimal" "$(preset_minimal)" ;;
+			6) is_installed && toggle_nfqws2 ;;
+			7) is_installed && restart_service && pause_enter ;;
+			8) show_status && pause_enter ;;
+			9) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
 			0|"") exit 0 ;;
 			*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
 		esac
