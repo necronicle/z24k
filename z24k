@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-29"
+SCRIPT_VERSION="2026-01-07-30"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -20,6 +20,23 @@ red='\033[0;31m'
 green='\033[0;32m'
 yellow='\033[0;33m'
 cyan='\033[0;36m'
+
+if [ "${Z24K_BOOTSTRAP:-0}" != "1" ] && [ "${Z24K_SELF_UPDATE:-1}" -eq 1 ]; then
+	if [ "$0" != "$INSTALL_DIR/z24k.sh" ]; then
+		tmp="${TMPDIR:-/tmp}/z24k.latest"
+		if command -v curl >/dev/null 2>&1; then
+			if curl -fsSL "$Z24K_RAW/z24k?nocache=$(date +%s)" -o "$tmp"; then
+				chmod +x "$tmp"
+				Z24K_BOOTSTRAP=1 exec "$tmp" "$@"
+			fi
+		elif command -v wget >/dev/null 2>&1; then
+			if wget -qO "$tmp" "$Z24K_RAW/z24k?nocache=$(date +%s)"; then
+				chmod +x "$tmp"
+				Z24K_BOOTSTRAP=1 exec "$tmp" "$@"
+			fi
+		fi
+	fi
+fi
 
 log() {
 	echo "[z24k] $*"
