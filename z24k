@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-43"
+SCRIPT_VERSION="2026-01-07-44"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -443,6 +443,28 @@ extract_last_available() {
 	printf "%s|%s" "$testname" "$strategy"
 }
 
+run_blockcheck_background() {
+	logfile="$1"
+	if command -v setsid >/dev/null 2>&1; then
+		setsid sh "$INSTALL_DIR/blockcheck2.sh" >"$logfile" 2>&1 &
+	else
+		sh "$INSTALL_DIR/blockcheck2.sh" >"$logfile" 2>&1 &
+	fi
+	BLOCKCHECK_PID=$!
+}
+
+stop_blockcheck() {
+	pid="$1"
+	if command -v setsid >/dev/null 2>&1; then
+		kill -TERM -"$pid" 2>/dev/null || true
+		sleep 1
+		kill -KILL -"$pid" 2>/dev/null || true
+	else
+		kill "$pid" 2>/dev/null || true
+	fi
+	wait "$pid" 2>/dev/null || true
+}
+
 ensure_payload() {
 	strat="$1"
 	payload="$2"
@@ -634,8 +656,15 @@ auto_pick_strategy() {
 	: > "$logfile"
 	scanlevel=""
 	while :; do
-		ZAPRET_BASE="$INSTALL_DIR" ZAPRET_RW="$INSTALL_DIR" BATCH=1 TEST=standard DOMAINS="$domain" IPVS=4 SCANLEVEL="$scanlevel" \
-			pid=$(run_blockcheck_background "$logfile")
+		ZAPRET_BASE="$INSTALL_DIR"
+		ZAPRET_RW="$INSTALL_DIR"
+		BATCH=1
+		TEST=standard
+		DOMAINS="$domain"
+		IPVS=4
+		SCANLEVEL="$scanlevel"
+		run_blockcheck_background "$logfile"
+		pid=$BLOCKCHECK_PID
 		echo -n "Идет подбор"
 		found_tls=""
 		found_quic=""
@@ -1034,25 +1063,3 @@ menu() {
 
 log "Menu version $SCRIPT_VERSION"
 menu
-run_blockcheck_background() {
-	logfile="$1"
-	if command -v setsid >/dev/null 2>&1; then
-		setsid sh "$INSTALL_DIR/blockcheck2.sh" >"$logfile" 2>&1 &
-		echo $!
-	else
-		sh "$INSTALL_DIR/blockcheck2.sh" >"$logfile" 2>&1 &
-		echo $!
-	fi
-}
-
-stop_blockcheck() {
-	pid="$1"
-	if command -v setsid >/dev/null 2>&1; then
-		kill -TERM -"$pid" 2>/dev/null || true
-		sleep 1
-		kill -KILL -"$pid" 2>/dev/null || true
-	else
-		kill "$pid" 2>/dev/null || true
-	fi
-	wait "$pid" 2>/dev/null || true
-}
