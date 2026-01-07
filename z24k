@@ -361,6 +361,7 @@ EOF
 apply_preset_quiet() {
 	name="$1"
 	opt="$2"
+	ensure_split_hostlists
 	set_opt_block "$opt"
 	set_kv NFQWS2_ENABLE 1
 	set_kv Z24K_PRESET "$name"
@@ -377,12 +378,21 @@ apply_preset() {
 	name="$1"
 	opt="$2"
 	echo -e "${cyan}Применение стратегии: ${green}${name}${plain}"
+	ensure_split_hostlists
 	set_opt_block "$opt"
 	set_kv NFQWS2_ENABLE 1
 	set_kv Z24K_PRESET "$name"
 	restart_service
 	echo -e "${green}Готово.${plain}"
 	pause_enter
+}
+
+ensure_split_hostlists() {
+	mkdir -p "$INSTALL_DIR/ipset"
+	[ -f "$INSTALL_DIR/ipset/zapret-hosts-user.txt" ] || : > "$INSTALL_DIR/ipset/zapret-hosts-user.txt"
+	[ -f "$INSTALL_DIR/ipset/zapret-hosts-youtube.txt" ] || : > "$INSTALL_DIR/ipset/zapret-hosts-youtube.txt"
+	[ -f "$INSTALL_DIR/ipset/zapret-hosts-discord.txt" ] || : > "$INSTALL_DIR/ipset/zapret-hosts-discord.txt"
+	[ -f "$INSTALL_DIR/ipset/zapret-hosts.txt" ] || : > "$INSTALL_DIR/ipset/zapret-hosts.txt"
 }
 
 test_url() {
@@ -403,6 +413,10 @@ test_strategies() {
 		echo "curl is required for tests."
 		pause_enter
 		return
+	fi
+	if [ -f "$CONFIG" ]; then
+		mkdir -p "$TMP_DIR"
+		cp -f "$CONFIG" "$TMP_DIR/config.test.bak"
 	fi
 	set_mode_hostlist
 	ensure_hostlist_file
@@ -428,6 +442,10 @@ test_strategies() {
 		echo -e "${green}Result:${plain} ${ok}/${total} OK"
 		echo ""
 	done
+	if [ -f "$TMP_DIR/config.test.bak" ]; then
+		cp -f "$TMP_DIR/config.test.bak" "$CONFIG"
+		restart_service_quiet
+	fi
 	pause_enter
 }
 
