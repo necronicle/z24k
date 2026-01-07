@@ -1,11 +1,12 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-6"
+SCRIPT_VERSION="2026-01-07-7"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_RAW="https://github.com/necronicle/z24k/raw/master"
 KEENETIC_RAW="$Z24K_RAW/keenetic"
+LISTS_RAW="$Z24K_RAW/lists"
 INSTALL_DIR="/opt/zapret2"
 TMP_DIR="/tmp/zapret2-install"
 
@@ -87,6 +88,10 @@ set_kv() {
 get_kv() {
 	key="$1"
 	grep "^${key}=" "$CONFIG" 2>/dev/null | tail -n1 | cut -d= -f2-
+}
+
+set_mode_hostlist() {
+	set_kv MODE_FILTER hostlist
 }
 
 get_opt_block() {
@@ -259,11 +264,15 @@ do_install() {
 	if [ "$HAD_CONFIG" -eq 0 ]; then
 		sed -i 's/^NFQWS2_ENABLE=0/NFQWS2_ENABLE=1/' "$CONFIG"
 		set_kv Z24K_PRESET default
+		set_mode_hostlist
 	fi
 
 	if [ -x /opt/etc/init.d/S00fix ]; then
 		/opt/etc/init.d/S00fix start || true
 	fi
+
+	update_user_lists
+	update_rkn_list
 
 	"$SERVICE" restart
 	log "Install complete."
@@ -336,6 +345,28 @@ do_uninstall() {
 	pause_enter
 }
 
+update_user_lists() {
+	local tmp
+	tmp="$TMP_DIR/z24k-hosts.txt"
+	mkdir -p "$TMP_DIR" "$INSTALL_DIR/ipset"
+
+	: > "$tmp"
+	fetch "$LISTS_RAW/youtube.txt" "$TMP_DIR/youtube.txt"
+	fetch "$LISTS_RAW/discord.txt" "$TMP_DIR/discord.txt"
+
+	cat "$TMP_DIR/youtube.txt" "$TMP_DIR/discord.txt" | awk 'NF {print $0}' | sort -u > "$tmp"
+	cp -f "$tmp" "$INSTALL_DIR/ipset/zapret-hosts-user.txt"
+}
+
+update_rkn_list() {
+	if [ -x "$INSTALL_DIR/ipset/get_antizapret_domains.sh" ]; then
+		log "Updating RKN list (antizapret)"
+		"$INSTALL_DIR/ipset/get_antizapret_domains.sh" || true
+	else
+		echo -e "${yellow}RKN updater not found.${plain}"
+	fi
+}
+
 is_installed() {
 	[ -f "$CONFIG" ] && [ -x "$SERVICE" ]
 }
@@ -372,10 +403,12 @@ menu() {
 			menu_item "3" "Стратегия: Default" ""
 			menu_item "4" "Стратегия: Aggressive" ""
 			menu_item "5" "Стратегия: Minimal (без QUIC)" ""
-			menu_item "6" "Вкл/Выкл NFQWS2" ""
-			menu_item "7" "Перезапуск сервиса" ""
-			menu_item "8" "Показать статус" ""
-			menu_item "9" "Редактировать config" ""
+			menu_item "6" "Обновить списки YT/Discord" ""
+			menu_item "7" "Обновить список RKN" ""
+			menu_item "8" "Вкл/Выкл NFQWS2" ""
+			menu_item "9" "Перезапуск сервиса" ""
+			menu_item "10" "Показать статус" ""
+			menu_item "11" "Редактировать config" ""
 			menu_item "0" "Выход" ""
 		else
 			menu_item "0" "Выход" ""
@@ -389,10 +422,12 @@ menu() {
 			3) is_installed && apply_preset "default" "$(preset_default)" ;;
 			4) is_installed && apply_preset "aggressive" "$(preset_aggressive)" ;;
 			5) is_installed && apply_preset "minimal" "$(preset_minimal)" ;;
-			6) is_installed && toggle_nfqws2 ;;
-			7) is_installed && restart_service && pause_enter ;;
-			8) show_status && pause_enter ;;
-			9) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
+			6) is_installed && set_mode_hostlist && update_user_lists && restart_service && pause_enter ;;
+			7) is_installed && set_mode_hostlist && update_rkn_list && restart_service && pause_enter ;;
+			8) is_installed && toggle_nfqws2 ;;
+			9) is_installed && restart_service && pause_enter ;;
+			10) show_status && pause_enter ;;
+			11) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
 			0|"") exit 0 ;;
 			*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
 		esac

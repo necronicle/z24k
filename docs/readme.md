@@ -25,7 +25,7 @@ curl -fsSL https://github.com/necronicle/z24k/raw/master/install.sh | sh
 curl -fsSL https://raw.githubusercontent.com/necronicle/z24k/master/keenetic/install.sh | sh
 ```
 
-После установки можно открыть меню и выбрать стратегию:
+После установки можно открыть меню и выбрать стратегию или обновить списки:
 ```
 z24k
 ```

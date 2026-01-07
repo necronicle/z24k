@@ -23,6 +23,7 @@ What the installer does:
 
 After install:
 - Menu: run `z24k` to select strategies and manage service
+- Default mode: hostlist (RKN + YouTube + Discord lists)
 
 Alternate entrypoint (same behavior):
 
