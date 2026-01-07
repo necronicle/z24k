@@ -6,7 +6,7 @@ This repository provides a one-command installer for Keenetic routers via Entwar
 Quick install (opens menu):
 
 ```
-curl -fsSL https://github.com/necronicle/z24k/raw/master/install.sh | sh
+curl -O https://raw.githubusercontent.com/necronicle/z24k/master/z24k && sh z24k
 ```
 
 Requirements:

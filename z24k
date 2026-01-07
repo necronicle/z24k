@@ -37,12 +37,6 @@ pause_enter() {
 	read_tty "Enter для продолжения" _
 }
 
-safe_clear() {
-	if command -v clear >/dev/null 2>&1; then
-		clear || true
-	fi
-}
-
 menu_item() {
 	echo -e "${green}$1. $2${plain} $3"
 }
@@ -62,6 +56,12 @@ fetch() {
 	else
 		echo "curl or wget is required" >&2
 		exit 1
+	fi
+}
+
+safe_clear() {
+	if command -v clear >/dev/null 2>&1; then
+		clear || true
 	fi
 }
 
@@ -293,6 +293,20 @@ do_install() {
 	pause_enter
 }
 
+do_uninstall() {
+	echo -e "${yellow}Удаление zapret2 и сервисов...${plain}"
+	if [ -x "$SERVICE" ]; then
+		"$SERVICE" stop || true
+	fi
+	rm -f /opt/etc/init.d/S90-zapret2
+	rm -f /opt/etc/ndm/netfilter.d/000-zapret2.sh
+	rm -f /opt/etc/init.d/S00fix
+	rm -f /opt/bin/z24k
+	rm -rf "$INSTALL_DIR"
+	echo -e "${green}Удаление завершено.${plain}"
+	pause_enter
+}
+
 preset_default() {
 	if [ -f "$CONFIG_DEFAULT" ]; then
 		get_opt_block "$CONFIG_DEFAULT"
@@ -342,20 +356,6 @@ toggle_nfqws2() {
 		echo -e "${green}NFQWS2 включен.${plain}"
 	fi
 	restart_service
-	pause_enter
-}
-
-do_uninstall() {
-	echo -e "${yellow}Удаление zapret2 и сервисов...${plain}"
-	if [ -x "$SERVICE" ]; then
-		"$SERVICE" stop || true
-	fi
-	rm -f /opt/etc/init.d/S90-zapret2
-	rm -f /opt/etc/ndm/netfilter.d/000-zapret2.sh
-	rm -f /opt/etc/init.d/S00fix
-	rm -f /opt/bin/z24k
-	rm -rf "$INSTALL_DIR"
-	echo -e "${green}Удаление завершено.${plain}"
 	pause_enter
 }
 
