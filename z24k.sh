@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-9"
+SCRIPT_VERSION="2026-01-07-10"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -81,11 +81,8 @@ self_update() {
 	mkdir -p "$TMP_DIR"
 
 	sha=$(get_sha || true)
-	if [ -n "$sha" ]; then
-		url="$Z24K_RAW_BASE/$sha/z24k.sh"
-	else
-		url="$RAW_FALLBACK/z24k.sh"
-	fi
+	[ -n "$sha" ] || return
+	url="$Z24K_RAW_BASE/$sha/z24k.sh"
 
 	fetch "$url" "$tmp" || return
 	chmod +x "$tmp"
