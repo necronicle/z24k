@@ -100,32 +100,38 @@ get_opt_block() {
 
 set_opt_block() {
 	opt="$1"
-	awk -v opt="$opt" '
-		BEGIN {found=0; in=0}
+	found=0
+	in_block=0
+	tmp="${CONFIG}.tmp"
+	: > "$tmp"
+	while IFS= read -r line; do
+		if [ "$in_block" -eq 1 ]; then
+			[ "$line" = "\"" ] && in_block=0
+			continue
+		fi
+		if [ "$line" = "NFQWS2_OPT=\"" ]; then
+			found=1
+			in_block=1
+			{
+				echo "NFQWS2_OPT=\""
+				printf "%s\n" "$opt"
+				echo "\""
+			} >> "$tmp"
+			continue
+		fi
+		echo "$line" >> "$tmp"
+	done < "$CONFIG"
+
+	if [ "$found" -eq 0 ]; then
 		{
-			if ($0 ~ /^NFQWS2_OPT="/) {
-				found=1
-				print "NFQWS2_OPT=\""
-				print opt
-				print "\""
-				in=1
-				next
-			}
-			if (in) {
-				if ($0 ~ /^"$/) in=0
-				next
-			}
-			print
-		}
-		END {
-			if (!found) {
-				print ""
-				print "NFQWS2_OPT=\""
-				print opt
-				print "\""
-			}
-		}
-	' "$CONFIG" > "${CONFIG}.tmp" && mv "${CONFIG}.tmp" "$CONFIG"
+			echo ""
+			echo "NFQWS2_OPT=\""
+			printf "%s\n" "$opt"
+			echo "\""
+		} >> "$tmp"
+	fi
+
+	mv "$tmp" "$CONFIG"
 }
 
 restart_service() {
