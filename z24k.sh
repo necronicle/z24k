@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-27"
+SCRIPT_VERSION="2026-01-07-28"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -697,65 +697,65 @@ show_status() {
 }
 
 menu() {
-	while true; do
-		safe_clear
-		echo -e "${cyan}--- z24k menu ---${plain}"
-		show_status
-		echo ""
-		menu_item "1" "Install/Update" ""
-		menu_item "2" "Uninstall" ""
-		if is_installed; then
-			menu_item "3" "Strategy: Universal (split lists)" ""
-			menu_item "4" "Strategy: Default" ""
-			menu_item "5" "Strategy: Manual" ""
-			menu_item "6" "Strategy: Manual+Blobs" ""
-			menu_item "7" "Strategy: Aggressive" ""
-			menu_item "8" "Strategy: Minimal (no QUIC)" ""
-			menu_item "9" "Run blockcheck2 (interactive)" ""
-			menu_item "10" "Test strategies (auto)" ""
-			menu_item "11" "Update lists YT/Discord" ""
-			menu_item "12" "Update list RKN" ""
-			menu_item "13" "Toggle NFQWS2" ""
-			menu_item "14" "Restart service" ""
-			menu_item "15" "Show status" ""
-			menu_item "16" "Edit config" ""
-		fi
-		menu_item "0" "Exit" ""
-		echo ""
-		read_tty "Select: " ans
+	safe_clear
+	echo -e "${cyan}--- z24k menu ---${plain}"
+	show_status
+	echo ""
+	menu_item "1" "Install/Update" ""
+	menu_item "2" "Uninstall" ""
+	if is_installed; then
+		menu_item "3" "Strategy: Universal (split lists)" ""
+		menu_item "4" "Strategy: Default" ""
+		menu_item "5" "Strategy: Manual" ""
+		menu_item "6" "Strategy: Manual+Blobs" ""
+		menu_item "7" "Strategy: Aggressive" ""
+		menu_item "8" "Strategy: Minimal (no QUIC)" ""
+		menu_item "9" "Run blockcheck2 (interactive)" ""
+		menu_item "10" "Test strategies (auto)" ""
+		menu_item "11" "Update lists YT/Discord" ""
+		menu_item "12" "Update list RKN" ""
+		menu_item "13" "Toggle NFQWS2" ""
+		menu_item "14" "Restart service" ""
+		menu_item "15" "Show status" ""
+		menu_item "16" "Edit config" ""
+	fi
+	menu_item "0" "Exit" ""
+	echo ""
+	read_tty "Select: " ans
 
-		case "$ans" in
-			1) do_install ;;
-			2) do_uninstall ;;
-			3) is_installed && apply_preset "universal" "$(preset_universal)" ;;
-			4) is_installed && apply_preset "default" "$(preset_default)" ;;
-			5) is_installed && apply_preset "manual" "$(preset_manual)" ;;
-			6) is_installed && apply_preset "manual_blobs" "$(preset_manual_blobs)" ;;
-			7) is_installed && apply_preset "aggressive" "$(preset_aggressive)" ;;
-			8) is_installed && apply_preset "minimal" "$(preset_minimal)" ;;
-			9) is_installed && run_blockcheck ;;
-			10) is_installed && test_strategies ;;
-			11) is_installed && set_mode_hostlist && update_user_lists && restart_service && pause_enter ;;
-			12)
-				if is_installed; then
-					set_mode_hostlist
-					ensure_rkn_bootstrap_hosts
-					restart_service
-					if ! update_rkn_list; then
-						log "RKN update failed. You can retry from the menu."
-					fi
-					restart_service
-					pause_enter
+	case "$ans" in
+		1) do_install ;;
+		2) do_uninstall ;;
+		3) is_installed && apply_preset "universal" "$(preset_universal)" ;;
+		4) is_installed && apply_preset "default" "$(preset_default)" ;;
+		5) is_installed && apply_preset "manual" "$(preset_manual)" ;;
+		6) is_installed && apply_preset "manual_blobs" "$(preset_manual_blobs)" ;;
+		7) is_installed && apply_preset "aggressive" "$(preset_aggressive)" ;;
+		8) is_installed && apply_preset "minimal" "$(preset_minimal)" ;;
+		9) is_installed && run_blockcheck ;;
+		10) is_installed && test_strategies ;;
+		11) is_installed && set_mode_hostlist && update_user_lists && restart_service && pause_enter ;;
+		12)
+			if is_installed; then
+				set_mode_hostlist
+				ensure_rkn_bootstrap_hosts
+				restart_service
+				if ! update_rkn_list; then
+					log "RKN update failed. You can retry from the menu."
 				fi
-				;;
-			13) is_installed && toggle_nfqws2 ;;
-			14) is_installed && restart_service && pause_enter ;;
-			15) show_status && pause_enter ;;
-			16) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
-			0|"") exit 0 ;;
-			*) echo -e "${yellow}Invalid choice.${plain}"; sleep 1 ;;
-		esac
-	done
+				restart_service
+				pause_enter
+			fi
+			;;
+		13) is_installed && toggle_nfqws2 ;;
+		14) is_installed && restart_service && pause_enter ;;
+		15) show_status && pause_enter ;;
+		16) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
+		0|"") exit 0 ;;
+		*) echo -e "${yellow}Invalid choice.${plain}"; sleep 1 ;;
+	esac
+
+	menu
 }
 
 log "Menu version $SCRIPT_VERSION"
