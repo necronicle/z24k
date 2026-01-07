@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-41"
+SCRIPT_VERSION="2026-01-07-42"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -415,6 +415,20 @@ extract_blockcheck_strategy() {
 	printf "%s" "$strategy"
 }
 
+extract_last_available() {
+	logfile="$1"
+	line=$(awk '
+		/^- curl_test_/ && $0 ~ / : nfqws2 / { last=$0 }
+		/AVAILABLE/ { avail=1 }
+		END { if (avail && last!="") print last }
+	' "$logfile")
+	[ -n "$line" ] || return 1
+	testname=$(echo "$line" | awk '{print $2}')
+	strategy=$(echo "$line" | sed -e 's/^.*: nfqws2 //' | xargs)
+	[ -n "$testname" ] && [ -n "$strategy" ] || return 1
+	printf "%s|%s" "$testname" "$strategy"
+}
+
 ensure_payload() {
 	strat="$1"
 	payload="$2"
@@ -614,10 +628,20 @@ auto_pick_strategy() {
 		found_quic=""
 		while kill -0 "$pid" 2>/dev/null; do
 			printf "."
-			if grep -q "working strategy found" "$logfile" 2>/dev/null; then
-				found_tls=$(extract_blockcheck_strategy "curl_test_https_tls13" "$logfile" || true)
-				[ -z "$found_tls" ] && found_tls=$(extract_blockcheck_strategy "curl_test_https_tls12" "$logfile" || true)
-				found_quic=$(extract_blockcheck_strategy "curl_test_http3" "$logfile" || true)
+			entry=$(extract_last_available "$logfile" || true)
+			if [ -n "$entry" ]; then
+				testname=${entry%%|*}
+				strategy=${entry#*|}
+				case "$testname" in
+					curl_test_https_tls13|curl_test_https_tls12)
+						found_tls="$strategy"
+						;;
+					curl_test_http3)
+						found_quic="$strategy"
+						;;
+					*)
+						;;
+				esac
 				if [ -n "$found_tls" ] || [ -n "$found_quic" ]; then
 					kill "$pid" 2>/dev/null || true
 					wait "$pid" 2>/dev/null || true
