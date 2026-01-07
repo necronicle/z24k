@@ -609,15 +609,19 @@ generate_strategy() {
 
 		out=$(test_url "$url")
 		echo "$out"
-		read_tty "Save? (s)ave/(n)ext/(q)uit: " ans
-		case "$ans" in
-			s|S)
-				save_block "$list" "$block"
-				saved=1
-				break
-				;;
-			q|Q) break ;;
-		esac
+		if echo "$out" | grep -q "OK ("; then
+			read_tty "Save? (s)ave/(n)ext/(q)uit: " ans
+			case "$ans" in
+				s|S)
+					save_block "$list" "$block"
+					saved=1
+					break
+					;;
+				q|Q) break ;;
+			esac
+		else
+			echo "No response, trying next..."
+		fi
 	done
 
 	if [ "$saved" -eq 1 ]; then
