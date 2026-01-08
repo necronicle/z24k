@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-77"
+SCRIPT_VERSION="2026-01-07-78"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1575,6 +1575,13 @@ auto_pick_category() {
 }
 
 auto_pick_all_categories() {
+	local ylist gvlist
+	ylist="$LISTS_DIR/ipset-youtube.txt"
+	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
+	if [ ! -s "$ylist" ] || [ ! -s "$gvlist" ]; then
+		echo -e "${yellow}Списки не найдены или пустые. Обновите списки и запустите автоподбор снова.${plain}"
+		return 0
+	fi
 	echo -e "${cyan}Автоподбор стратегий для категорий...${plain}"
 	auto_pick_category "youtube" "tcp" "YouTube TCP" "https://www.youtube.com/" || true
 	auto_pick_category "youtube_udp" "udp" "YouTube UDP" "https://www.youtube.com/" || true
