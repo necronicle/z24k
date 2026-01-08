@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-103"
+SCRIPT_VERSION="2026-01-07-104"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -96,7 +96,7 @@ fetch() {
 
 	if need_cmd curl; then
 		if ! curl -fsSL --connect-timeout 10 --max-time 60 --retry 3 "$url" -o "$out"; then
-			echo -e "${yellow}Download failed: $url${plain}"
+			echo -e "${yellow}Download failed (curl $?): $url${plain}"
 			return 1
 		fi
 	elif need_cmd wget; then
