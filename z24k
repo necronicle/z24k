@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-104"
+SCRIPT_VERSION="2026-01-07-106"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -96,6 +96,7 @@ fetch() {
 
 	if need_cmd curl; then
 		if ! curl -fsSL --connect-timeout 10 --max-time 60 --retry 3 "$url" -o "$out"; then
+			echo "FETCH-FAIL: $url"
 			echo -e "${yellow}Download failed (curl $?): $url${plain}"
 			return 1
 		fi
@@ -1140,8 +1141,10 @@ ensure_blob_files() {
 				file=${line##*@bin/}
 				[ -z "$file" ] && continue
 				if [ ! -s "$INSTALL_DIR/files/fake/$file" ]; then
+					blob_url="$Z24K_RAW/files/fake/$file"
 					log "Downloading blob: $file"
-					fetch "$Z24K_RAW/files/fake/$file" "$INSTALL_DIR/files/fake/$file" || true
+					log "Blob URL: $blob_url"
+					fetch "$blob_url" "$INSTALL_DIR/files/fake/$file" || true
 				fi
 				;;
 		esac
