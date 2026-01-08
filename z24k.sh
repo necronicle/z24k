@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-75"
+SCRIPT_VERSION="2026-01-07-76"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1564,10 +1564,10 @@ auto_pick_category() {
 
 auto_pick_all_categories() {
 	echo -e "${cyan}Автоподбор стратегий для категорий...${plain}"
-	auto_pick_category "youtube" "tcp" "YouTube TCP" "https://www.youtube.com/"
-	auto_pick_category "youtube_udp" "udp" "YouTube UDP" "https://www.youtube.com/"
-	auto_pick_category "googlevideo_tcp" "tcp" "Googlevideo" "https://rr1---sn-jvhnu5g-n8vr.googlevideo.com"
-	auto_pick_category "rkn" "tcp" "RKN" "https://meduza.io/"
+	auto_pick_category "youtube" "tcp" "YouTube TCP" "https://www.youtube.com/" || true
+	auto_pick_category "youtube_udp" "udp" "YouTube UDP" "https://www.youtube.com/" || true
+	auto_pick_category "googlevideo_tcp" "tcp" "Googlevideo" "https://rr1---sn-jvhnu5g-n8vr.googlevideo.com" || true
+	auto_pick_category "rkn" "tcp" "RKN" "https://meduza.io/" || true
 	echo -e "${cyan}Автоподбор завершен.${plain}"
 }
 
