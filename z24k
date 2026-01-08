@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-68"
+SCRIPT_VERSION="2026-01-07-69"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1192,12 +1192,22 @@ get_strategy_args_from_ini() {
 	local file name
 	file="$1"
 	name="$2"
-	awk -v s="$name" '
-		BEGIN{in=0}
-		$0 ~ "^\\["s"\\]$" {in=1; next}
-		in && /^\\[/ {exit}
-		in && /^args=/ {sub(/^args=/,""); print; exit}
-	' "$file" 2>/dev/null
+	[ -f "$file" ] || return 0
+	in_section=0
+	while IFS= read -r line || [ -n "$line" ]; do
+		line=$(printf "%s" "$line" | tr -d '\r')
+		if [ "$line" = "[$name]" ]; then
+			in_section=1
+			continue
+		fi
+		case "$line" in
+			"["*"]") [ "$in_section" -eq 1 ] && break ;;
+		esac
+		if [ "$in_section" -eq 1 ] && [ "${line%%=*}" = "args" ]; then
+			printf "%s\n" "${line#*=}"
+			return 0
+		fi
+	done < "$file"
 }
 
 build_category_filter() {
@@ -1343,11 +1353,17 @@ get_category_value() {
 	section="$1"
 	key="$2"
 	[ -f "$CATEGORIES_FILE" ] || return 0
-	awk -v s="$section" -v k="$key" '
-		$0 ~ "^\\["s"\\]$" {in=1; next}
-		in && /^\\[/ {in=0}
-		in && $0 ~ "^"k"=" {sub("^"k"=",""); print; exit}
-	' "$CATEGORIES_FILE" 2>/dev/null || true
+	while IFS= read -r line || [ -n "$line" ]; do
+		line=$(printf "%s" "$line" | tr -d '\r')
+		case "$line" in
+			"[$section]") in_section=1; continue ;;
+			"["*"]") [ "${in_section:-0}" = "1" ] && break ;;
+		esac
+		if [ "${in_section:-0}" = "1" ] && [ "${line%%=*}" = "$key" ]; then
+			printf "%s\n" "${line#*=}"
+			return 0
+		fi
+	done < "$CATEGORIES_FILE"
 }
 
 set_category_strategy() {
@@ -1357,12 +1373,38 @@ set_category_strategy() {
 	tmpfile="$TMP_DIR/z24k-categories.tmp"
 	mkdir -p "$TMP_DIR"
 	[ -f "$CATEGORIES_FILE" ] || return 0
-	awk -v s="$section" -v v="$value" '
-		$0 ~ "^\\["s"\\]$" {in=1; print; next}
-		in && /^\\[/ {in=0}
-		in && /^strategy=/ {print "strategy="v; next}
-		{print}
-	' "$CATEGORIES_FILE" > "$tmpfile" && mv "$tmpfile" "$CATEGORIES_FILE"
+	in_section=0
+	replaced=0
+	while IFS= read -r line || [ -n "$line" ]; do
+		line=$(printf "%s" "$line" | tr -d '\r')
+		if [ "$line" = "[$section]" ]; then
+			in_section=1
+			replaced=0
+			printf "%s\n" "$line" >> "$tmpfile"
+			continue
+		fi
+		case "$line" in
+			"["*"]")
+				if [ "$in_section" -eq 1 ] && [ "$replaced" -eq 0 ]; then
+					printf "strategy=%s\n" "$value" >> "$tmpfile"
+				fi
+				in_section=0
+				replaced=0
+				printf "%s\n" "$line" >> "$tmpfile"
+				continue
+				;;
+		esac
+		if [ "$in_section" -eq 1 ] && [ "${line%%=*}" = "strategy" ]; then
+			printf "strategy=%s\n" "$value" >> "$tmpfile"
+			replaced=1
+			continue
+		fi
+		printf "%s\n" "$line" >> "$tmpfile"
+	done < "$CATEGORIES_FILE"
+	if [ "$in_section" -eq 1 ] && [ "$replaced" -eq 0 ]; then
+		printf "strategy=%s\n" "$value" >> "$tmpfile"
+	fi
+	mv "$tmpfile" "$CATEGORIES_FILE"
 }
 
 list_strategies() {
