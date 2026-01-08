@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-89"
+SCRIPT_VERSION="2026-01-07-90"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -73,7 +73,7 @@ read_tty() {
 }
 
 pause_enter() {
-	read_tty "Enter для продолжения" _
+	read_tty "Enter РґР»СЏ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ" _
 }
 
 safe_clear() {
@@ -337,7 +337,7 @@ do_install() {
 	sync_all_lists
 	ensure_blob_files
 	if ! ensure_autopick_lists; then
-		echo -e "${yellow}Списки не найдены или пустые после обновления. Автоподбор будет пропущен.${plain}"
+		echo -e "${yellow}РЎРїРёСЃРєРё РЅРµ РЅР°Р№РґРµРЅС‹ РёР»Рё РїСѓСЃС‚С‹Рµ РїРѕСЃР»Рµ РѕР±РЅРѕРІР»РµРЅРёСЏ. РђРІС‚РѕРїРѕРґР±РѕСЂ Р±СѓРґРµС‚ РїСЂРѕРїСѓС‰РµРЅ.${plain}"
 	fi
 
 	if [ "$HAD_CONFIG" -eq 0 ]; then
@@ -678,13 +678,13 @@ restart_service_quiet() {
 apply_preset() {
 	name="$1"
 	opt="$2"
-	echo -e "${cyan}Применение стратегии: ${green}${name}${plain}"
+	echo -e "${cyan}РџСЂРёРјРµРЅРµРЅРёРµ СЃС‚СЂР°С‚РµРіРёРё: ${green}${name}${plain}"
 	ensure_split_hostlists
 	set_opt_block "$opt"
 	set_kv NFQWS2_ENABLE 1
 	set_kv Z24K_PRESET "$name"
 	restart_service
-	echo -e "${green}Готово.${plain}"
+	echo -e "${green}Р“РѕС‚РѕРІРѕ.${plain}"
 	pause_enter
 }
 
@@ -741,7 +741,7 @@ auto_pick_strategy() {
 	else
 		domain=$(last_nonempty_line_any "$list_file")
 		if [ -z "$domain" ]; then
-			echo -e "${yellow}Список пустой: $list_file${plain}"
+			echo -e "${yellow}РЎРїРёСЃРѕРє РїСѓСЃС‚РѕР№: $list_file${plain}"
 			pause_enter
 			return
 		fi
@@ -751,8 +751,8 @@ auto_pick_strategy() {
 		"$SERVICE" stop || true
 	fi
 
-	echo -e "${cyan}Подбор стратегии для ${green}${label}${plain} (${domain})"
-	log "Лог blockcheck2: $logfile"
+	echo -e "${cyan}РџРѕРґР±РѕСЂ СЃС‚СЂР°С‚РµРіРёРё РґР»СЏ ${green}${label}${plain} (${domain})"
+	log "Р›РѕРі blockcheck2: $logfile"
 	: > "$logfile"
 	scanlevel=""
 	while :; do
@@ -770,7 +770,7 @@ auto_pick_strategy() {
 		export ENABLE_HTTP ENABLE_HTTPS_TLS12 ENABLE_HTTPS_TLS13 ENABLE_HTTP3
 		run_blockcheck_background "$logfile"
 		pid=$BLOCKCHECK_PID
-		echo -n "Идет подбор"
+		echo -n "РРґРµС‚ РїРѕРґР±РѕСЂ"
 		found_tls=""
 		found_quic=""
 		last_entry=""
@@ -808,8 +808,8 @@ auto_pick_strategy() {
 			set_opt_block "$tmp_opt"
 			set_kv NFQWS2_ENABLE 1
 			restart_service
-			echo -e "${green}Стратегия применена временно. Проверьте доступность.${plain}"
-			read_tty "Сохранить (s), продолжить (c) или выйти (q)? " choice
+			echo -e "${green}РЎС‚СЂР°С‚РµРіРёСЏ РїСЂРёРјРµРЅРµРЅР° РІСЂРµРјРµРЅРЅРѕ. РџСЂРѕРІРµСЂСЊС‚Рµ РґРѕСЃС‚СѓРїРЅРѕСЃС‚СЊ.${plain}"
+			read_tty "РЎРѕС…СЂР°РЅРёС‚СЊ (s), РїСЂРѕРґРѕР»Р¶РёС‚СЊ (c) РёР»Рё РІС‹Р№С‚Рё (q)? " choice
 			case "$choice" in
 				s|S)
 					[ -n "$found_tls" ] && tls_strat="$found_tls"
@@ -844,7 +844,7 @@ auto_pick_strategy() {
 	fi
 
 	if [ -z "$tls_strat" ] && [ -z "$quic_strat" ]; then
-		echo -e "${yellow}Стратегия не найдена. Лог: $logfile${plain}"
+		echo -e "${yellow}РЎС‚СЂР°С‚РµРіРёСЏ РЅРµ РЅР°Р№РґРµРЅР°. Р›РѕРі: $logfile${plain}"
 		pause_enter
 		return
 	fi
@@ -872,7 +872,7 @@ auto_pick_strategy() {
 	set_kv Z24K_PRESET auto
 	restart_service
 
-	echo -e "${green}Стратегия применена для $label.${plain}"
+	echo -e "${green}РЎС‚СЂР°С‚РµРіРёСЏ РїСЂРёРјРµРЅРµРЅР° РґР»СЏ $label.${plain}"
 	pause_enter
 }
 
@@ -1023,17 +1023,17 @@ toggle_nfqws2() {
 	cur=$(get_kv NFQWS2_ENABLE)
 	if [ "$cur" = "1" ]; then
 		set_kv NFQWS2_ENABLE 0
-		echo -e "${yellow}NFQWS2 отключен.${plain}"
+		echo -e "${yellow}NFQWS2 РѕС‚РєР»СЋС‡РµРЅ.${plain}"
 	else
 		set_kv NFQWS2_ENABLE 1
-		echo -e "${green}NFQWS2 включен.${plain}"
+		echo -e "${green}NFQWS2 РІРєР»СЋС‡РµРЅ.${plain}"
 	fi
 	restart_service
 	pause_enter
 }
 
 do_uninstall() {
-	echo -e "${yellow}Удаление zapret2 и сервисов...${plain}"
+	echo -e "${yellow}РЈРґР°Р»РµРЅРёРµ zapret2 Рё СЃРµСЂРІРёСЃРѕРІ...${plain}"
 	if [ -x "$SERVICE" ]; then
 		"$SERVICE" stop || true
 	fi
@@ -1042,7 +1042,7 @@ do_uninstall() {
 	rm -f /opt/etc/init.d/S00fix
 	rm -f /opt/bin/z24k
 	rm -rf "$INSTALL_DIR"
-	echo -e "${green}Удаление завершено.${plain}"
+	echo -e "${green}РЈРґР°Р»РµРЅРёРµ Р·Р°РІРµСЂС€РµРЅРѕ.${plain}"
 	pause_enter
 }
 
@@ -1491,14 +1491,14 @@ check_access() {
 		return
 	fi
 	if curl --tls-max 1.2 --max-time 2 -s -o /dev/null "$url"; then
-		echo -e "${green}Есть ответ по TLS 1.2.${plain}"
+		echo -e "${green}Р•СЃС‚СЊ РѕС‚РІРµС‚ РїРѕ TLS 1.2.${plain}"
 	else
-		echo -e "${yellow}Нет ответа по TLS 1.2.${plain}"
+		echo -e "${yellow}РќРµС‚ РѕС‚РІРµС‚Р° РїРѕ TLS 1.2.${plain}"
 	fi
 	if curl --tlsv1.3 --max-time 2 -s -o /dev/null "$url"; then
-		echo -e "${green}Есть ответ по TLS 1.3.${plain}"
+		echo -e "${green}Р•СЃС‚СЊ РѕС‚РІРµС‚ РїРѕ TLS 1.3.${plain}"
 	else
-		echo -e "${yellow}Нет ответа по TLS 1.3.${plain}"
+		echo -e "${yellow}РќРµС‚ РѕС‚РІРµС‚Р° РїРѕ TLS 1.3.${plain}"
 	fi
 }
 
@@ -1536,7 +1536,7 @@ auto_pick_category() {
 	url="$4"
 
 	if ! need_cmd curl; then
-		echo -e "${yellow}curl не найден. Автоподбор пропущен для ${label}.${plain}"
+		echo -e "${yellow}curl РЅРµ РЅР°Р№РґРµРЅ. РђРІС‚РѕРїРѕРґР±РѕСЂ РїСЂРѕРїСѓС‰РµРЅ РґР»СЏ ${label}.${plain}"
 		return 1
 	fi
 
@@ -1553,7 +1553,7 @@ auto_pick_category() {
 		*) filter_file="" ;;
 	esac
 	if [ -n "$filter_file" ] && [ ! -s "$LISTS_DIR/$filter_file" ]; then
-		echo -e "${yellow}Список $LISTS_DIR/$filter_file не найден или пустой. Автоподбор пропущен для ${label}.${plain}"
+		echo -e "${yellow}РЎРїРёСЃРѕРє $LISTS_DIR/$filter_file РЅРµ РЅР°Р№РґРµРЅ РёР»Рё РїСѓСЃС‚РѕР№. РђРІС‚РѕРїРѕРґР±РѕСЂ РїСЂРѕРїСѓС‰РµРЅ РґР»СЏ ${label}.${plain}"
 		return 0
 	fi
 
@@ -1567,259 +1567,25 @@ auto_pick_category() {
 	list_strategies "$ini_file" > "$tmpfile"
 	count=$(wc -l < "$tmpfile" 2>/dev/null || echo 0)
 	if [ "$count" -le 0 ]; then
-		echo -e "${yellow}Список стратегий пуст для ${label}.${plain}"
+		echo -e "${yellow}РЎРїРёСЃРѕРє СЃС‚СЂР°С‚РµРіРёР№ РїСѓСЃС‚ РґР»СЏ ${label}.${plain}"
 		return 1
 	fi
 
 	if [ "$proto" = "udp" ] && ! supports_http3; then
-		echo -e "${yellow}curl без HTTP/3. Пропускаю автоподбор для ${label}.${plain}"
-		return 1
-	fi
-
-	prev=$(get_category_value "$section" "strategy")
-	found=0
-	idx=0
-	echo -e "${cyan}Автоподбор стратегии: ${green}${label}${plain}"
-	while IFS= read -r strat || [ -n "$strat" ]; do
-		idx=$((idx + 1))
-		set_category_strategy "$section" "$strat"
-		set_kv Z24K_PRESET categories
-		set_opt_block "$(preset_categories)"
-		log "Пробую ${label} #${idx}: ${strat}"
-		restart_service_timeout || true
-		if [ "$proto" = "udp" ]; then
-			if test_http3 "$url"; then
-				echo -e "${green}HTTP/3 OK: ${url}${plain}"
-				found=1
-				break
-			else
-				echo -e "${yellow}HTTP/3 FAIL: ${url}${plain}"
-			fi
-		else
-			if test_tls "$url"; then
-				echo -e "${green}TLS OK: ${url}${plain}"
-				found=1
-				break
-			else
-				echo -e "${yellow}TLS FAIL: ${url}${plain}"
-			fi
+		echo -e "${yellow}curl without HTTP/3. Applying strategy without check: ${label}.${plain}"
+		prev=$(get_category_value "$section" "strategy")
+		tmpfile="$TMP_DIR/z24k-strats-auto.list"
+		list_strategies "$ini_file" > "$tmpfile"
+		strat=$(head -n 1 "$tmpfile")
+		if [ -n "$strat" ]; then
+			set_category_strategy "$section" "$strat"
+			set_kv Z24K_PRESET categories
+			set_opt_block "$(preset_categories)"
+			restart_service_timeout || true
+			echo -e "${green}Applied strategy for ${label}: ${strat}${plain}"
+			return 0
 		fi
-	done < "$tmpfile"
-
-	if [ "$found" -eq 1 ]; then
-		echo -e "${green}Найдена стратегия для ${label}: ${strat}${plain}"
-		return 0
-	fi
-
-	prev="${prev:-disabled}"
-	set_category_strategy "$section" "$prev"
-	set_kv Z24K_PRESET categories
-	set_opt_block "$(preset_categories)"
-	restart_service_timeout || true
-	echo -e "${yellow}Стратегия для ${label} не найдена.${plain}"
-	return 1
-}
-
-auto_pick_all_categories() {
-	local ylist gvlist
-	ylist="$LISTS_DIR/ipset-youtube.txt"
-	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
-	if ! ensure_autopick_lists; then
-		echo -e "${yellow}Списки не найдены или пустые. Обновите списки и запустите автоподбор снова.${plain}"
-		return 0
-	fi
-	echo -e "${cyan}Автоподбор стратегий для категорий...${plain}"
-	auto_pick_category "youtube" "tcp" "YouTube TCP" "https://www.youtube.com/" || true
-	auto_pick_category "youtube_udp" "udp" "YouTube UDP" "https://www.youtube.com/" || true
-	auto_pick_category "googlevideo_tcp" "tcp" "Googlevideo" "https://rr1---sn-jvhnu5g-n8vr.googlevideo.com" || true
-	auto_pick_category "rkn" "tcp" "RKN" "https://meduza.io/" || true
-	echo -e "${cyan}Автоподбор завершен.${plain}"
-}
-
-required_lists_ok() {
-	local ylist gvlist
-	ylist="$LISTS_DIR/ipset-youtube.txt"
-	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
-	[ -s "$ylist" ] && [ -s "$gvlist" ]
-}
-ensure_autopick_lists() {
-	local ylist gvlist ok
-	ok=1
-	ylist="$LISTS_DIR/ipset-youtube.txt"
-	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
-	if [ ! -s "$ylist" ]; then
-		log "Downloading list: ipset-youtube.txt"
-		fetch "$LISTS_RAW/ipset-youtube.txt?nocache=$(date +%s)" "$ylist" || ok=0
-	fi
-	if [ ! -s "$gvlist" ]; then
-		log "Downloading list: ipset-googlevideo.txt"
-		fetch "$LISTS_RAW/ipset-googlevideo.txt?nocache=$(date +%s)" "$gvlist" || ok=0
-	fi
-	[ "$ok" -eq 1 ] && required_lists_ok
-}
-
-pick_strategy_interactive() {
-	local section proto label url ini_file tmpfile count idx start strat prev
-	section="$1"
-	proto="$2"
-	label="$3"
-	url="$4"
-	mkdir -p "$TMP_DIR"
-	ensure_category_files
-
-	case "$proto" in
-		udp) ini_file="$STRAT_UDP_FILE" ;;
-		stun) ini_file="$STRAT_STUN_FILE" ;;
-		*) ini_file="$STRAT_TCP_FILE" ;;
-	esac
-
-	tmpfile="$TMP_DIR/z24k-strats.list"
-	list_strategies "$ini_file" > "$tmpfile"
-	count=$(wc -l < "$tmpfile" 2>/dev/null || echo 0)
-	if [ "$count" -le 0 ]; then
-		echo -e "${yellow}Список стратегий пуст.${plain}"
-		pause_enter
-		return
-	fi
-
-	echo -e "${cyan}Подбор стратегии: ${green}$label${plain}"
-	read_tty "Номер стратегии (1-$count, Enter=1): " start
-	[ -z "$start" ] && start=1
-	prev=$(get_category_value "$section" "strategy")
-	idx=0
-
-	ensure_blob_files
-	fetch_category_lists "$section"
-
-	while IFS= read -r strat || [ -n "$strat" ]; do
-		idx=$((idx + 1))
-		[ "$idx" -lt "$start" ] && continue
-		set_category_strategy "$section" "$strat"
-		set_kv Z24K_PRESET categories
-		set_opt_block "$(preset_categories)"
-		log "Перезапуск сервиса..."
-		restart_service_timeout || true
-		echo -e "${cyan}Стратегия #${idx}: ${green}${strat}${plain}"
-		check_access "$url"
-		read_tty "1=сохранить, 0=отмена, Enter=следующая: " ans
-		case "$ans" in
-			1)
-				echo -e "${green}Сохранено.${plain}"
-				pause_enter
-				return
-				;;
-			0)
-				[ -n "$prev" ] && set_category_strategy "$section" "$prev"
-				set_kv Z24K_PRESET categories
-				set_opt_block "$(preset_categories)"
-				restart_service_timeout || true
-				echo -e "${yellow}Отмена.${plain}"
-				pause_enter
-				return
-				;;
-		esac
-	done < "$tmpfile"
-
-	echo -e "${yellow}Стратегии закончились.${plain}"
-	pause_enter
-}
-
-magisk_pick_menu() {
-	local domain url
-	while true; do
-		safe_clear
-		echo -e "${cyan}--- Подбор стратегий (как magisk) ---${plain}"
-		echo "1. YouTube UDP (QUIC)"
-		echo "2. YouTube TCP"
-		echo "3. Googlevideo (YT поток)"
-		echo "4. RKN"
-		echo "5. Пользовательский домен"
-		echo "0. Назад"
-		echo ""
-		read_tty "Ваш выбор: " ans
-		case "$ans" in
-			1) pick_strategy_interactive "youtube_udp" "udp" "YouTube UDP" "https://www.youtube.com/" ;;
-			2) pick_strategy_interactive "youtube" "tcp" "YouTube TCP" "https://www.youtube.com/" ;;
-			3)
-				read_tty "URL для проверки (Enter=rr1---sn-jvhnu5g-n8vr.googlevideo.com): " url
-				[ -z "$url" ] && url="https://rr1---sn-jvhnu5g-n8vr.googlevideo.com"
-				pick_strategy_interactive "googlevideo_tcp" "tcp" "Googlevideo" "$url"
-				;;
-			4) pick_strategy_interactive "rkn" "tcp" "RKN" "https://meduza.io/" ;;
-			5)
-				read_tty "Домен: " domain
-				[ -z "$domain" ] && continue
-				set_custom_domain "$domain"
-				pick_strategy_interactive "custom" "tcp" "Custom" "https://$domain/"
-				;;
-			0|"") return ;;
-		esac
-	done
-}
-
-show_category_strategies() {
-	local s
-	echo -e "${cyan}--- Стратегии категорий ---${plain}"
-	s=$(get_category_value "youtube" "strategy")
-	echo "YouTube TCP: ${s:-disabled}"
-	s=$(get_category_value "youtube_udp" "strategy")
-	echo "YouTube UDP: ${s:-disabled}"
-	s=$(get_category_value "googlevideo_tcp" "strategy")
-	echo "Googlevideo: ${s:-disabled}"
-	s=$(get_category_value "rkn" "strategy")
-	echo "RKN: ${s:-disabled}"
-	s=$(get_category_value "custom" "strategy")
-	echo "Custom: ${s:-disabled}"
-}
-
-show_category_command() {
-	local opt
-	echo -e "${cyan}--- NFQWS2_OPT (Категории) ---${plain}"
-	ensure_category_files
-	ensure_blob_files
-	sync_category_lists
-	opt=$(build_opt_from_categories)
-	if [ -n "$opt" ]; then
-		printf "%s\n" "$opt"
-	else
-		echo -e "${yellow}Пусто. Категории не собраны.${plain}"
-	fi
-}
-
-restart_service_timeout() {
-	local pid i
-	"$SERVICE" restart >/tmp/z24k-restart.log 2>&1 &
-	pid=$!
-	i=0
-	while kill -0 "$pid" 2>/dev/null; do
-		i=$((i + 1))
-		if [ "$i" -ge 30 ]; then
-			log "Restart timed out. See /tmp/z24k-restart.log"
-			kill "$pid" 2>/dev/null || true
-			return 1
-		fi
-		sleep 1
-	done
-	wait "$pid" 2>/dev/null || true
-	return 0
-}
-
-ensure_rkn_bootstrap_hosts() {
-	local f
-	f="$INSTALL_DIR/ipset/zapret-hosts-user.txt"
-	mkdir -p "$INSTALL_DIR/ipset"
-	[ -f "$f" ] || : > "$f"
-	grep -q '^antizapret\.prostovpn\.org$' "$f" 2>/dev/null || echo "antizapret.prostovpn.org" >> "$f"
-	grep -q '^prostovpn\.org$' "$f" 2>/dev/null || echo "prostovpn.org" >> "$f"
-	grep -q '^raw\.githubusercontent\.com$' "$f" 2>/dev/null || echo "raw.githubusercontent.com" >> "$f"
-}
-
-update_rkn_list() {
-	local urls url tmpfile zdom ok tmpbase
-	if [ -f "$INSTALL_DIR/ipset/def.sh" ]; then
-		ZAPRET_BASE="$INSTALL_DIR" ZAPRET_RW="$INSTALL_DIR" . "$INSTALL_DIR/ipset/def.sh"
-	else
-		echo -e "${yellow}RKN updater not found.${plain}"
+		echo -e "${yellow}Strategy list empty for ${label}.${plain}"
 		return 1
 	fi
 
@@ -1896,38 +1662,38 @@ show_status() {
 		running="running"
 	fi
 
-	echo -e "${cyan}--- Статус ---${plain}"
-	echo "Установлено: $installed"
-	echo "Пресет: $preset"
+	echo -e "${cyan}--- РЎС‚Р°С‚СѓСЃ ---${plain}"
+	echo "РЈСЃС‚Р°РЅРѕРІР»РµРЅРѕ: $installed"
+	echo "РџСЂРµСЃРµС‚: $preset"
 	echo "NFQWS2_ENABLE: $enable"
 	echo "nfqws2: $running"
 }
 
 menu() {
 	safe_clear
-	echo -e "${cyan}--- z24k меню ---${plain}"
+	echo -e "${cyan}--- z24k РјРµРЅСЋ ---${plain}"
 	show_status
 	echo ""
-	menu_item "1" "Установка/Обновление" ""
-	menu_item "2" "Удаление" ""
+	menu_item "1" "РЈСЃС‚Р°РЅРѕРІРєР°/РћР±РЅРѕРІР»РµРЅРёРµ" ""
+	menu_item "2" "РЈРґР°Р»РµРЅРёРµ" ""
 	if is_installed; then
-		menu_item "3" "Стратегия: Категории (community)" ""
-		menu_item "4" "Обновить все списки" ""
-		menu_item "5" "Редактировать категории" ""
-		menu_item "6" "Подбор стратегий (как magisk)" ""
-		menu_item "7" "Запустить blockcheck2 (интерактивно)" ""
-		menu_item "8" "Тест стратегий (авто)" ""
-		menu_item "9" "Обновить список RKN" ""
-		menu_item "10" "Вкл/Выкл NFQWS2" ""
-		menu_item "11" "Перезапуск сервиса" ""
-		menu_item "12" "Показать статус" ""
-		menu_item "13" "Показать стратегии категорий" ""
-		menu_item "14" "Показать NFQWS2_OPT (категории)" ""
-		menu_item "15" "Редактировать config" ""
+		menu_item "3" "РЎС‚СЂР°С‚РµРіРёСЏ: РљР°С‚РµРіРѕСЂРёРё (community)" ""
+		menu_item "4" "РћР±РЅРѕРІРёС‚СЊ РІСЃРµ СЃРїРёСЃРєРё" ""
+		menu_item "5" "Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РєР°С‚РµРіРѕСЂРёРё" ""
+		menu_item "6" "РџРѕРґР±РѕСЂ СЃС‚СЂР°С‚РµРіРёР№ (РєР°Рє magisk)" ""
+		menu_item "7" "Р—Р°РїСѓСЃС‚РёС‚СЊ blockcheck2 (РёРЅС‚РµСЂР°РєС‚РёРІРЅРѕ)" ""
+		menu_item "8" "РўРµСЃС‚ СЃС‚СЂР°С‚РµРіРёР№ (Р°РІС‚Рѕ)" ""
+		menu_item "9" "РћР±РЅРѕРІРёС‚СЊ СЃРїРёСЃРѕРє RKN" ""
+		menu_item "10" "Р’РєР»/Р’С‹РєР» NFQWS2" ""
+		menu_item "11" "РџРµСЂРµР·Р°РїСѓСЃРє СЃРµСЂРІРёСЃР°" ""
+		menu_item "12" "РџРѕРєР°Р·Р°С‚СЊ СЃС‚Р°С‚СѓСЃ" ""
+		menu_item "13" "РџРѕРєР°Р·Р°С‚СЊ СЃС‚СЂР°С‚РµРіРёРё РєР°С‚РµРіРѕСЂРёР№" ""
+		menu_item "14" "РџРѕРєР°Р·Р°С‚СЊ NFQWS2_OPT (РєР°С‚РµРіРѕСЂРёРё)" ""
+		menu_item "15" "Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ config" ""
 	fi
-	menu_item "0" "Выход" ""
+	menu_item "0" "Р’С‹С…РѕРґ" ""
 	echo ""
-	read_tty "Ваш выбор: " ans
+	read_tty "Р’Р°С€ РІС‹Р±РѕСЂ: " ans
 
 	case "$ans" in
 		1) do_install ;;
@@ -1951,7 +1717,7 @@ menu() {
 		14) show_category_command && pause_enter ;;
 		15) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
 		0|"") exit 0 ;;
-		*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
+		*) echo -e "${yellow}РќРµРІРµСЂРЅС‹Р№ РІРІРѕРґ.${plain}"; sleep 1 ;;
 	esac
 
 	menu
