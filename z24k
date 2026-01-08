@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-64"
+SCRIPT_VERSION="2026-01-07-65"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -339,11 +339,6 @@ do_install() {
 
 	if [ -x /opt/etc/init.d/S00fix ]; then
 		/opt/etc/init.d/S00fix start || true
-	fi
-
-	"$SERVICE" restart
-	if ! update_rkn_list; then
-		log "RKN update failed. You can retry from the menu."
 	fi
 
 	"$SERVICE" restart
@@ -1644,13 +1639,7 @@ menu() {
 		8) is_installed && test_strategies ;;
 		9)
 			if is_installed; then
-				set_mode_hostlist
-				ensure_rkn_bootstrap_hosts
-				restart_service
-				if ! update_rkn_list; then
-					log "RKN update failed. You can retry from the menu."
-				fi
-				restart_service
+				log "RKN list update is disabled in category mode."
 				pause_enter
 			fi
 			;;
