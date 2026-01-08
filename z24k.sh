@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-08-116"
+SCRIPT_VERSION="2026-01-08-117"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -199,6 +199,14 @@ set_opt_block() {
 restart_service() {
 	if [ -x "$SERVICE" ]; then
 		"$SERVICE" restart
+	else
+		echo "Service not found: $SERVICE" >&2
+	fi
+}
+
+stop_service() {
+	if [ -x "$SERVICE" ]; then
+		"$SERVICE" stop
 	else
 		echo "Service not found: $SERVICE" >&2
 	fi
@@ -2001,11 +2009,12 @@ menu() {
 		menu_item "8" "Тест стратегий (авто)" ""
 		menu_item "9" "Обновить списки (z4r)" ""
 		menu_item "10" "Вкл/Выкл NFQWS2" ""
-		menu_item "11" "Перезапуск сервиса" ""
-		menu_item "12" "Показать статус" ""
-		menu_item "13" "Показать стратегии категорий" ""
-		menu_item "14" "Показать NFQWS2_OPT (категории)" ""
-		menu_item "15" "Редактировать config" ""
+		menu_item "11" "Остановить сервис" ""
+		menu_item "12" "Перезапуск сервиса" ""
+		menu_item "13" "Показать статус" ""
+		menu_item "14" "Показать стратегии категорий" ""
+		menu_item "15" "Показать NFQWS2_OPT (категории)" ""
+		menu_item "16" "Редактировать config" ""
 	fi
 	menu_item "0" "Выход" ""
 	echo ""
@@ -2022,11 +2031,12 @@ menu() {
 		8) is_installed && test_strategies ;;
 		9) is_installed && sync_all_lists && pause_enter ;;
 		10) is_installed && toggle_nfqws2 ;;
-		11) is_installed && restart_service && pause_enter ;;
-		12) show_status && pause_enter ;;
-		13) show_category_strategies && pause_enter ;;
-		14) show_category_command && pause_enter ;;
-		15) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
+		11) is_installed && stop_service && pause_enter ;;
+		12) is_installed && restart_service && pause_enter ;;
+		13) show_status && pause_enter ;;
+		14) show_category_strategies && pause_enter ;;
+		15) show_category_command && pause_enter ;;
+		16) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
 		0|"") exit 0 ;;
 		*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
 	esac
