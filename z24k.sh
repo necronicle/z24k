@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-80"
+SCRIPT_VERSION="2026-01-07-81"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -327,7 +327,7 @@ do_install() {
 	install_menu
 
 	ensure_category_files
-	sync_category_lists
+	sync_all_lists
 	ensure_blob_files
 	if ! ensure_autopick_lists; then
 		echo -e "${yellow}Списки не найдены или пустые после обновления. Автоподбор будет пропущен.${plain}"
@@ -1127,6 +1127,22 @@ ensure_blob_files() {
 	done < "$BLOBS_FILE"
 }
 
+sync_all_lists() {
+	local tmp file
+	mkdir -p "$LISTS_DIR" "$TMP_DIR"
+	tmp="$TMP_DIR/z24k-lists-index.txt"
+	fetch "$LISTS_RAW/index.txt?nocache=$(date +%s)" "$tmp" || return 0
+	while IFS= read -r file || [ -n "$file" ]; do
+		file=$(printf "%s" "$file" | tr -d '\r')
+		[ -z "$file" ] && continue
+		if [ -s "$LISTS_DIR/$file" ]; then
+			continue
+		fi
+		log "Downloading list: $file"
+		fetch "$LISTS_RAW/$file?nocache=$(date +%s)" "$LISTS_DIR/$file" || true
+	done < "$tmp"
+}
+
 sync_category_lists() {
 	local line key value tmp current hostlist ipset strategy
 	mkdir -p "$LISTS_DIR" "$TMP_DIR"
@@ -1169,7 +1185,7 @@ sync_category_lists() {
 			continue
 		fi
 		log "Downloading list: $file"
-		fetch "$LISTS_RAW/$file" "$LISTS_DIR/$file" || true
+		fetch "$LISTS_RAW/$file?nocache=$(date +%s)" "$LISTS_DIR/$file" || true
 	done
 }
 
@@ -1609,11 +1625,11 @@ ensure_autopick_lists() {
 	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
 	if [ ! -s "$ylist" ]; then
 		log "Downloading list: ipset-youtube.txt"
-		fetch "$LISTS_RAW/ipset-youtube.txt" "$ylist" || ok=0
+		fetch "$LISTS_RAW/ipset-youtube.txt?nocache=$(date +%s)" "$ylist" || ok=0
 	fi
 	if [ ! -s "$gvlist" ]; then
 		log "Downloading list: ipset-googlevideo.txt"
-		fetch "$LISTS_RAW/ipset-googlevideo.txt" "$gvlist" || ok=0
+		fetch "$LISTS_RAW/ipset-googlevideo.txt?nocache=$(date +%s)" "$gvlist" || ok=0
 	fi
 	[ "$ok" -eq 1 ] && required_lists_ok
 }
@@ -1893,7 +1909,7 @@ menu() {
 		1) do_install ;;
 		2) do_uninstall ;;
 		3) is_installed && apply_preset "categories" "$(preset_categories)" ;;
-		4) is_installed && sync_category_lists && pause_enter ;;
+		4) is_installed && sync_all_lists && pause_enter ;;
 		5) is_installed && ensure_category_files && ${EDITOR:-vi} "$CATEGORIES_FILE" ;;
 		6) is_installed && magisk_pick_menu ;;
 		7) is_installed && run_blockcheck ;;
