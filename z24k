@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-79"
+SCRIPT_VERSION="2026-01-07-80"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -329,7 +329,7 @@ do_install() {
 	ensure_category_files
 	sync_category_lists
 	ensure_blob_files
-	if ! required_lists_ok; then
+	if ! ensure_autopick_lists; then
 		echo -e "${yellow}Списки не найдены или пустые после обновления. Автоподбор будет пропущен.${plain}"
 	fi
 
@@ -1583,7 +1583,7 @@ auto_pick_all_categories() {
 	local ylist gvlist
 	ylist="$LISTS_DIR/ipset-youtube.txt"
 	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
-	if [ ! -s "$ylist" ] || [ ! -s "$gvlist" ]; then
+	if ! ensure_autopick_lists; then
 		echo -e "${yellow}Списки не найдены или пустые. Обновите списки и запустите автоподбор снова.${plain}"
 		return 0
 	fi
@@ -1600,6 +1600,22 @@ required_lists_ok() {
 	ylist="$LISTS_DIR/ipset-youtube.txt"
 	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
 	[ -s "$ylist" ] && [ -s "$gvlist" ]
+}
+
+ensure_autopick_lists() {
+	local ylist gvlist ok
+	ok=1
+	ylist="$LISTS_DIR/ipset-youtube.txt"
+	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
+	if [ ! -s "$ylist" ]; then
+		log "Downloading list: ipset-youtube.txt"
+		fetch "$LISTS_RAW/ipset-youtube.txt" "$ylist" || ok=0
+	fi
+	if [ ! -s "$gvlist" ]; then
+		log "Downloading list: ipset-googlevideo.txt"
+		fetch "$LISTS_RAW/ipset-googlevideo.txt" "$gvlist" || ok=0
+	fi
+	[ "$ok" -eq 1 ] && required_lists_ok
 }
 
 pick_strategy_interactive() {
