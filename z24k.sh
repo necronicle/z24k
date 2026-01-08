@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-107"
+SCRIPT_VERSION="2026-01-07-108"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -112,17 +112,15 @@ fetch() {
 }
 
 get_latest_ver() {
-	api="https://api.github.com/repos/$REPO/releases/latest"
+	rel="https://github.com/$REPO/releases/latest"
 	ver=""
 
 	if need_cmd curl; then
-		json=$(curl -fsSL "$api" 2>/dev/null) || {
-			log "Version check failed: $api"
-			json=""
-		}
-		ver=$(printf "%s" "$json" | sed -n 's/.*"tag_name": *"v\([0-9.]*\)".*/\1/p' | head -n1)
+		loc=$(curl -fsSI -o /dev/null -w "%{redirect_url}" "$rel" 2>/dev/null) || loc=""
+		ver=$(printf "%s" "$loc" | sed -n 's|.*/tag/v\([0-9.]*\).*|\\1|p' | head -n1)
 	elif need_cmd wget; then
-		ver=$(wget -qO- "$api" | sed -n 's/.*"tag_name": *"v\([0-9.]*\)".*/\1/p' | head -n1)
+		loc=$(wget -S -qO- "$rel" 2>&1 | sed -n 's/^[Ll]ocation: *//p' | head -n1 | tr -d '\r')
+		ver=$(printf "%s" "$loc" | sed -n 's|.*/tag/v\([0-9.]*\).*|\\1|p' | head -n1)
 	fi
 
 	if [ -n "$ver" ]; then
