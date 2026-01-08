@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-82"
+SCRIPT_VERSION="2026-01-07-83"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -16,6 +16,7 @@ BLOBS_RAW="$Z24K_RAW/blobs.txt"
 INSTALL_DIR="/opt/zapret2"
 TMP_DIR="/tmp/zapret2-install"
 LISTS_DIR="$INSTALL_DIR/ipset"
+ALT_LISTS_DIR="$INSTALL_DIR/lists"
 PKT_OUT=10
 
 CONFIG="$INSTALL_DIR/config"
@@ -1552,7 +1553,7 @@ auto_pick_category() {
 		hostlist) filter_file="$hostlist" ;;
 		*) filter_file="" ;;
 	esac
-	if [ -n "$filter_file" ] && [ ! -s "$LISTS_DIR/$filter_file" ]; then
+	if [ -n "$filter_file" ] && ! ensure_list_local "$filter_file"; then
 		echo -e "${yellow}Список $LISTS_DIR/$filter_file не найден или пустой. Автоподбор пропущен для ${label}.${plain}"
 		return 0
 	fi
@@ -1637,11 +1638,33 @@ required_lists_ok() {
 	[ -s "$ylist" ] && [ -s "$gvlist" ]
 }
 
+ensure_list_local() {
+	local file alt
+	file="$1"
+	[ -z "$file" ] && return 1
+	if [ -s "$LISTS_DIR/$file" ]; then
+		return 0
+	fi
+	alt="$ALT_LISTS_DIR/$file"
+	if [ -s "$alt" ]; then
+		mkdir -p "$LISTS_DIR"
+		cp -f "$alt" "$LISTS_DIR/$file"
+		[ -s "$LISTS_DIR/$file" ] && return 0
+	fi
+	return 1
+}
+
 ensure_autopick_lists() {
 	local ylist gvlist ok
 	ok=1
 	ylist="$LISTS_DIR/ipset-youtube.txt"
 	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
+	if ! ensure_list_local "ipset-youtube.txt"; then
+		ok=0
+	fi
+	if ! ensure_list_local "ipset-googlevideo.txt"; then
+		ok=0
+	fi
 	if [ ! -s "$ylist" ]; then
 		log "Downloading list: ipset-youtube.txt"
 		fetch "$LISTS_RAW/ipset-youtube.txt?nocache=$(date +%s)" "$ylist" || ok=0
