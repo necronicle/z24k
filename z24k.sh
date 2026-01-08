@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-90"
+SCRIPT_VERSION="2026-01-07-91"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -73,13 +73,7 @@ read_tty() {
 }
 
 pause_enter() {
-	read_tty "Enter Π Ò‘Π Β»Π΅Π Π Ρ—Π΅Π‚Π Ρ•Π Ò‘Π Ρ•Π Β»Π Β¶Π ΒµΠ Π…Π Ρ‘Π΅Π" _
-}
-
-safe_clear() {
-	if command -v clear >/dev/null 2>&1; then
-		clear || true
-	fi
+	read_tty "Enter ¦ΰTΡ¦ΰT¬¦α¦Ο ¦ΰTΧ¦α¦Β¦ΰTΥ¦ΰTΡ¦ΰTΥ¦ΰT¬¦ΰT¦¦ΰT¦¦ΰ¦Ε¦ΰTΡ¦α¦Ο" _
 }
 
 menu_item() {
@@ -108,6 +102,12 @@ fetch() {
 	else
 		echo "curl or wget is required" >&2
 		exit 1
+	fi
+}
+
+safe_clear() {
+	if command -v clear >/dev/null 2>&1; then
+		clear || true
 	fi
 }
 
@@ -337,7 +337,7 @@ do_install() {
 	sync_all_lists
 	ensure_blob_files
 	if ! ensure_autopick_lists; then
-		echo -e "${yellow}Π ΠΠ Ρ—Π Ρ‘Π΅ΠƒΠ Ρ”Π Ρ‘ Π Π…Π Βµ Π Π…Π Β°Π β„–Π Ò‘Π ΒµΠ Π…Π΅β€Ή Π Ρ‘Π Β»Π Ρ‘ Π Ρ—Π΅Ρ“Π΅ΠƒΠ΅β€Π΅β€ΉΠ Βµ Π Ρ—Π Ρ•Π΅ΠƒΠ Β»Π Βµ Π Ρ•Π Β±Π Π…Π Ρ•Π Π†Π Β»Π ΒµΠ Π…Π Ρ‘Π΅Π. Π Ρ’Π Π†Π΅β€Π Ρ•Π Ρ—Π Ρ•Π Ò‘Π Β±Π Ρ•Π΅Π‚ Π Β±Π΅Ρ“Π Ò‘Π ΒµΠ΅β€ Π Ρ—Π΅Π‚Π Ρ•Π Ρ—Π΅Ρ“Π΅β€°Π ΒµΠ Π….${plain}"
+		echo -e "${yellow}¦ΰ¦Ξ¦ΰTΧ¦ΰTΡ¦α¦Γ¦ΰTΤ¦ΰTΡ ¦ΰ¦Ε¦ΰT¦ ¦ΰ¦Ε¦ΰT-¦ΰςΔΦ¦ΰTΡ¦ΰT¦¦ΰ¦Ε¦αςΐ¦ ¦ΰTΡ¦ΰT¬¦ΰTΡ ¦ΰTΧ¦αTΣ¦α¦Γ¦αςΐΪ¦αςΐ¦¦ΰT¦ ¦ΰTΧ¦ΰTΥ¦α¦Γ¦ΰT¬¦ΰT¦ ¦ΰTΥ¦ΰT-¦ΰ¦Ε¦ΰTΥ¦ΰ¦Ζ¦ΰT¬¦ΰT¦¦ΰ¦Ε¦ΰTΡ¦α¦Ο. ¦ΰTÒ¦ΰ¦Ζ¦αςΐΪ¦ΰTΥ¦ΰTΧ¦ΰTΥ¦ΰTΡ¦ΰT-¦ΰTΥ¦α¦Β ¦ΰT-¦αTΣ¦ΰTΡ¦ΰT¦¦αςΐΪ ¦ΰTΧ¦α¦Β¦ΰTΥ¦ΰTΧ¦αTΣ¦αςΐ-¦ΰT¦¦ΰ¦Ε.${plain}"
 	fi
 
 	if [ "$HAD_CONFIG" -eq 0 ]; then
@@ -358,6 +358,20 @@ do_install() {
 	log "Install complete."
 	pause_enter
 	return 0
+}
+
+do_uninstall() {
+	echo -e "${yellow}¦ΰ¦Θ¦ΰTΡ¦ΰT-¦ΰT¬¦ΰT¦¦ΰ¦Ε¦ΰTΡ¦ΰT¦ zapret2 ¦ΰTΡ ¦α¦Γ¦ΰT¦¦α¦Β¦ΰ¦Ζ¦ΰTΡ¦α¦Γ¦ΰTΥ¦ΰ¦Ζ...${plain}"
+	if [ -x "$SERVICE" ]; then
+		"$SERVICE" stop || true
+	fi
+	rm -f /opt/etc/init.d/S90-zapret2
+	rm -f /opt/etc/ndm/netfilter.d/000-zapret2.sh
+	rm -f /opt/etc/init.d/S00fix
+	rm -f /opt/bin/z24k
+	rm -rf "$INSTALL_DIR"
+	echo -e "${green}¦ΰ¦Θ¦ΰTΡ¦ΰT-¦ΰT¬¦ΰT¦¦ΰ¦Ε¦ΰTΡ¦ΰT¦ ¦ΰT¬¦ΰT-¦ΰ¦Ζ¦ΰT¦¦α¦Β¦αςΒμ¦ΰT¦¦ΰ¦Ε¦ΰTΥ.${plain}"
+	pause_enter
 }
 
 preset_default() {
@@ -678,13 +692,13 @@ restart_service_quiet() {
 apply_preset() {
 	name="$1"
 	opt="$2"
-	echo -e "${cyan}Π ΡΠ΅Π‚Π Ρ‘Π ΡΠ ΒµΠ Π…Π ΒµΠ Π…Π Ρ‘Π Βµ Π΅ΠƒΠ΅β€Π΅Π‚Π Β°Π΅β€Π ΒµΠ Ρ–Π Ρ‘Π Ρ‘: ${green}${name}${plain}"
+	echo -e "${cyan}Οπθμενενθε ρςπΰςεγθθ: ${green}${name}${plain}"
 	ensure_split_hostlists
 	set_opt_block "$opt"
 	set_kv NFQWS2_ENABLE 1
 	set_kv Z24K_PRESET "$name"
 	restart_service
-	echo -e "${green}Π β€Π Ρ•Π΅β€Π Ρ•Π Π†Π Ρ•.${plain}"
+	echo -e "${green}Γξςξβξ.${plain}"
 	pause_enter
 }
 
@@ -741,7 +755,7 @@ auto_pick_strategy() {
 	else
 		domain=$(last_nonempty_line_any "$list_file")
 		if [ -z "$domain" ]; then
-			echo -e "${yellow}Π ΠΠ Ρ—Π Ρ‘Π΅ΠƒΠ Ρ•Π Ρ” Π Ρ—Π΅Ρ“Π΅ΠƒΠ΅β€Π Ρ•Π β„–: $list_file${plain}"
+			echo -e "${yellow}¦ΰ¦Ξ¦ΰTΧ¦ΰTΡ¦α¦Γ¦ΰTΥ¦ΰTΤ ¦ΰTΧ¦αTΣ¦α¦Γ¦αςΐΪ¦ΰTΥ¦ΰςΔΦ: $list_file${plain}"
 			pause_enter
 			return
 		fi
@@ -751,8 +765,8 @@ auto_pick_strategy() {
 		"$SERVICE" stop || true
 	fi
 
-	echo -e "${cyan}Π ΡΠ Ρ•Π Ò‘Π Β±Π Ρ•Π΅Π‚ Π΅ΠƒΠ΅β€Π΅Π‚Π Β°Π΅β€Π ΒµΠ Ρ–Π Ρ‘Π Ρ‘ Π Ò‘Π Β»Π΅Π ${green}${label}${plain} (${domain})"
-	log "Π β€ΊΠ Ρ•Π Ρ– blockcheck2: $logfile"
+	echo -e "${cyan}¦ΰTί¦ΰTΥ¦ΰTΡ¦ΰT-¦ΰTΥ¦α¦Β ¦α¦Γ¦αςΐΪ¦α¦Β¦ΰT-¦αςΐΪ¦ΰT¦¦ΰTΦ¦ΰTΡ¦ΰTΡ ¦ΰTΡ¦ΰT¬¦α¦Ο ${green}${label}${plain} (${domain})"
+	log "¦ΰςΐ¦¦ΰTΥ¦ΰTΦ blockcheck2: $logfile"
 	: > "$logfile"
 	scanlevel=""
 	while :; do
@@ -770,7 +784,7 @@ auto_pick_strategy() {
 		export ENABLE_HTTP ENABLE_HTTPS_TLS12 ENABLE_HTTPS_TLS13 ENABLE_HTTP3
 		run_blockcheck_background "$logfile"
 		pid=$BLOCKCHECK_PID
-		echo -n "Π ΒΠ Ò‘Π ΒµΠ΅β€ Π Ρ—Π Ρ•Π Ò‘Π Β±Π Ρ•Π΅Π‚"
+		echo -n "¦ΰTΨ¦ΰTΡ¦ΰT¦¦αςΐΪ ¦ΰTΧ¦ΰTΥ¦ΰTΡ¦ΰT-¦ΰTΥ¦α¦Β"
 		found_tls=""
 		found_quic=""
 		last_entry=""
@@ -808,8 +822,20 @@ auto_pick_strategy() {
 			set_opt_block "$tmp_opt"
 			set_kv NFQWS2_ENABLE 1
 			restart_service
-			echo -e "${green}Π ΠΠ΅β€Π΅Π‚Π Β°Π΅β€Π ΒµΠ Ρ–Π Ρ‘Π΅Π Π Ρ—Π΅Π‚Π Ρ‘Π ΡΠ ΒµΠ Π…Π ΒµΠ Π…Π Β° Π Π†Π΅Π‚Π ΒµΠ ΡΠ ΒµΠ Π…Π Π…Π Ρ•. Π ΡΠ΅Π‚Π Ρ•Π Π†Π ΒµΠ΅Π‚Π΅ΠΠ΅β€Π Βµ Π Ò‘Π Ρ•Π΅ΠƒΠ΅β€Π΅Ρ“Π Ρ—Π Π…Π Ρ•Π΅ΠƒΠ΅β€Π΅Π.${plain}"
-			read_tty "Π ΠΠ Ρ•Π΅β€¦Π΅Π‚Π Β°Π Π…Π Ρ‘Π΅β€Π΅Π (s), Π Ρ—Π΅Π‚Π Ρ•Π Ò‘Π Ρ•Π Β»Π Β¶Π Ρ‘Π΅β€Π΅Π (c) Π Ρ‘Π Β»Π Ρ‘ Π Π†Π΅β€ΉΠ β„–Π΅β€Π Ρ‘ (q)? " choice
+            test_url="$domain"
+            case "$test_url" in
+                http://*|https://*) ;;
+                *) test_url="https://$test_url/" ;;
+            esac
+            if ! test_tcp_suite "$test_url"; then
+                echo -e "${yellow}TCP suite failed, continue search.${plain}"
+                restore_config_snapshot
+                restart_service
+                : > "$logfile"
+                continue
+            fi
+			echo -e "${green}¦ΰ¦Ξ¦αςΐΪ¦α¦Β¦ΰT-¦αςΐΪ¦ΰT¦¦ΰTΦ¦ΰTΡ¦α¦Ο ¦ΰTΧ¦α¦Β¦ΰTΡ¦ΰTΨ¦ΰT¦¦ΰ¦Ε¦ΰT¦¦ΰ¦Ε¦ΰT- ¦ΰ¦Ζ¦α¦Β¦ΰT¦¦ΰTΨ¦ΰT¦¦ΰ¦Ε¦ΰ¦Ε¦ΰTΥ. ¦ΰTί¦α¦Β¦ΰTΥ¦ΰ¦Ζ¦ΰT¦¦α¦Β¦α¦Κ¦αςΐΪ¦ΰT¦ ¦ΰTΡ¦ΰTΥ¦α¦Γ¦αςΐΪ¦αTΣ¦ΰTΧ¦ΰ¦Ε¦ΰTΥ¦α¦Γ¦αςΐΪ¦α¦Κ.${plain}"
+			read_tty "¦ΰ¦Ξ¦ΰTΥ¦αςΐζ¦α¦Β¦ΰT-¦ΰ¦Ε¦ΰTΡ¦αςΐΪ¦α¦Κ (s), ¦ΰTΧ¦α¦Β¦ΰTΥ¦ΰTΡ¦ΰTΥ¦ΰT¬¦ΰT¦¦ΰTΡ¦αςΐΪ¦α¦Κ (c) ¦ΰTΡ¦ΰT¬¦ΰTΡ ¦ΰ¦Ζ¦αςΐ¦¦ΰςΔΦ¦αςΐΪ¦ΰTΡ (q)? " choice
 			case "$choice" in
 				s|S)
 					[ -n "$found_tls" ] && tls_strat="$found_tls"
@@ -844,7 +870,7 @@ auto_pick_strategy() {
 	fi
 
 	if [ -z "$tls_strat" ] && [ -z "$quic_strat" ]; then
-		echo -e "${yellow}Π ΠΠ΅β€Π΅Π‚Π Β°Π΅β€Π ΒµΠ Ρ–Π Ρ‘Π΅Π Π Π…Π Βµ Π Π…Π Β°Π β„–Π Ò‘Π ΒµΠ Π…Π Β°. Π β€ΊΠ Ρ•Π Ρ–: $logfile${plain}"
+		echo -e "${yellow}¦ΰ¦Ξ¦αςΐΪ¦α¦Β¦ΰT-¦αςΐΪ¦ΰT¦¦ΰTΦ¦ΰTΡ¦α¦Ο ¦ΰ¦Ε¦ΰT¦ ¦ΰ¦Ε¦ΰT-¦ΰςΔΦ¦ΰTΡ¦ΰT¦¦ΰ¦Ε¦ΰT-. ¦ΰςΐ¦¦ΰTΥ¦ΰTΦ: $logfile${plain}"
 		pause_enter
 		return
 	fi
@@ -872,7 +898,7 @@ auto_pick_strategy() {
 	set_kv Z24K_PRESET auto
 	restart_service
 
-	echo -e "${green}Π ΠΠ΅β€Π΅Π‚Π Β°Π΅β€Π ΒµΠ Ρ–Π Ρ‘Π΅Π Π Ρ—Π΅Π‚Π Ρ‘Π ΡΠ ΒµΠ Π…Π ΒµΠ Π…Π Β° Π Ò‘Π Β»Π΅Π $label.${plain}"
+	echo -e "${green}¦ΰ¦Ξ¦αςΐΪ¦α¦Β¦ΰT-¦αςΐΪ¦ΰT¦¦ΰTΦ¦ΰTΡ¦α¦Ο ¦ΰTΧ¦α¦Β¦ΰTΡ¦ΰTΨ¦ΰT¦¦ΰ¦Ε¦ΰT¦¦ΰ¦Ε¦ΰT- ¦ΰTΡ¦ΰT¬¦α¦Ο $label.${plain}"
 	pause_enter
 }
 
@@ -1023,26 +1049,12 @@ toggle_nfqws2() {
 	cur=$(get_kv NFQWS2_ENABLE)
 	if [ "$cur" = "1" ]; then
 		set_kv NFQWS2_ENABLE 0
-		echo -e "${yellow}NFQWS2 Π Ρ•Π΅β€Π Ρ”Π Β»Π΅Π‹Π΅β€΅Π ΒµΠ Π….${plain}"
+		echo -e "${yellow}NFQWS2 ¦ΰTΥ¦αςΐΪ¦ΰTΤ¦ΰT¬¦α¦Λ¦αςΐα¦ΰT¦¦ΰ¦Ε.${plain}"
 	else
 		set_kv NFQWS2_ENABLE 1
-		echo -e "${green}NFQWS2 Π Π†Π Ρ”Π Β»Π΅Π‹Π΅β€΅Π ΒµΠ Π….${plain}"
+		echo -e "${green}NFQWS2 ¦ΰ¦Ζ¦ΰTΤ¦ΰT¬¦α¦Λ¦αςΐα¦ΰT¦¦ΰ¦Ε.${plain}"
 	fi
 	restart_service
-	pause_enter
-}
-
-do_uninstall() {
-	echo -e "${yellow}Π ΠΠ Ò‘Π Β°Π Β»Π ΒµΠ Π…Π Ρ‘Π Βµ zapret2 Π Ρ‘ Π΅ΠƒΠ ΒµΠ΅Π‚Π Π†Π Ρ‘Π΅ΠƒΠ Ρ•Π Π†...${plain}"
-	if [ -x "$SERVICE" ]; then
-		"$SERVICE" stop || true
-	fi
-	rm -f /opt/etc/init.d/S90-zapret2
-	rm -f /opt/etc/ndm/netfilter.d/000-zapret2.sh
-	rm -f /opt/etc/init.d/S00fix
-	rm -f /opt/bin/z24k
-	rm -rf "$INSTALL_DIR"
-	echo -e "${green}Π ΠΠ Ò‘Π Β°Π Β»Π ΒµΠ Π…Π Ρ‘Π Βµ Π Β·Π Β°Π Π†Π ΒµΠ΅Π‚Π΅β‚¬Π ΒµΠ Π…Π Ρ•.${plain}"
 	pause_enter
 }
 
@@ -1191,8 +1203,7 @@ sync_category_lists() {
 		if [ -s "$LISTS_DIR/$file" ]; then
 			continue
 		fi
-		log "Downloading list: $file"
-		fetch "$LISTS_RAW/$file?nocache=$(date +%s)" "$LISTS_DIR/$file" || true
+	echo -e "${yellow}¦ΰ¦Ξ¦ΰTΧ¦ΰTΡ¦α¦Γ¦ΰTΥ¦ΰTΤ $LISTS_DIR/$file ¦ΰ¦Ε¦ΰT¦ ¦ΰ¦Ε¦ΰT-¦ΰςΔΦ¦ΰTΡ¦ΰT¦¦ΰ¦Ε. ¦ΰςΐέ¦ΰTΥ¦ΰTΤ¦ΰT-¦αςΐα¦ΰTΤ¦ΰT- ¦ΰTΥ¦αςΐΪ¦ΰTΤ¦ΰT¬¦α¦Λ¦αςΐα¦ΰT¦¦ΰ¦Ε¦ΰT-.${plain}"
 	done
 }
 
@@ -1491,14 +1502,14 @@ check_access() {
 		return
 	fi
 	if curl --tls-max 1.2 --max-time 2 -s -o /dev/null "$url"; then
-		echo -e "${green}Π β€ΆΠ΅ΠƒΠ΅β€Π΅Π Π Ρ•Π΅β€Π Π†Π ΒµΠ΅β€ Π Ρ—Π Ρ• TLS 1.2.${plain}"
+		echo -e "${green}¦ΰςΐβ¦α¦Γ¦αςΐΪ¦α¦Κ ¦ΰTΥ¦αςΐΪ¦ΰ¦Ζ¦ΰT¦¦αςΐΪ ¦ΰTΧ¦ΰTΥ TLS 1.2.${plain}"
 	else
-		echo -e "${yellow}Π ΡΠ ΒµΠ΅β€ Π Ρ•Π΅β€Π Π†Π ΒµΠ΅β€Π Β° Π Ρ—Π Ρ• TLS 1.2.${plain}"
+		echo -e "${yellow}¦ΰTά¦ΰT¦¦αςΐΪ ¦ΰTΥ¦αςΐΪ¦ΰ¦Ζ¦ΰT¦¦αςΐΪ¦ΰT- ¦ΰTΧ¦ΰTΥ TLS 1.2.${plain}"
 	fi
 	if curl --tlsv1.3 --max-time 2 -s -o /dev/null "$url"; then
-		echo -e "${green}Π β€ΆΠ΅ΠƒΠ΅β€Π΅Π Π Ρ•Π΅β€Π Π†Π ΒµΠ΅β€ Π Ρ—Π Ρ• TLS 1.3.${plain}"
+		echo -e "${green}¦ΰςΐβ¦α¦Γ¦αςΐΪ¦α¦Κ ¦ΰTΥ¦αςΐΪ¦ΰ¦Ζ¦ΰT¦¦αςΐΪ ¦ΰTΧ¦ΰTΥ TLS 1.3.${plain}"
 	else
-		echo -e "${yellow}Π ΡΠ ΒµΠ΅β€ Π Ρ•Π΅β€Π Π†Π ΒµΠ΅β€Π Β° Π Ρ—Π Ρ• TLS 1.3.${plain}"
+		echo -e "${yellow}¦ΰTά¦ΰT¦¦αςΐΪ ¦ΰTΥ¦αςΐΪ¦ΰ¦Ζ¦ΰT¦¦αςΐΪ¦ΰT- ¦ΰTΧ¦ΰTΥ TLS 1.3.${plain}"
 	fi
 }
 
@@ -1519,6 +1530,41 @@ test_tls() {
 	curl --tlsv1.3 --max-time 3 --connect-timeout 3 -s -o /dev/null "$url"
 }
 
+
+test_tcp_suite() {
+	local url ok
+	url="$1"
+	ok=1
+	if [ -z "$url" ]; then
+		return 1
+	fi
+	if curl --tls-max 1.2 --max-time 3 --connect-timeout 3 -s -o /dev/null "$url"; then
+		echo -e "${green}TLS12 OK: ${url}${plain}"
+	else
+		echo -e "${yellow}TLS12 FAIL: ${url}${plain}"
+		ok=0
+	fi
+	if curl --tlsv1.3 --max-time 3 --connect-timeout 3 -s -o /dev/null "$url"; then
+		echo -e "${green}TLS13 OK: ${url}${plain}"
+	else
+		echo -e "${yellow}TLS13 FAIL: ${url}${plain}"
+		ok=0
+	fi
+	if curl --http1.1 --max-time 3 --connect-timeout 3 -s -o /dev/null "$url"; then
+		echo -e "${green}HTTP1 OK: ${url}${plain}"
+	else
+		echo -e "${yellow}HTTP1 FAIL: ${url}${plain}"
+		ok=0
+	fi
+	if curl --http2 --max-time 3 --connect-timeout 3 -s -o /dev/null "$url"; then
+		echo -e "${green}HTTP2 OK: ${url}${plain}"
+	else
+		echo -e "${yellow}HTTP2 FAIL: ${url}${plain}"
+		ok=0
+	fi
+	[ "$ok" -eq 1 ]
+}
+
 test_http3() {
 	local url
 	url="$1"
@@ -1536,13 +1582,15 @@ auto_pick_category() {
 	url="$4"
 
 	if ! need_cmd curl; then
-		echo -e "${yellow}curl Π Π…Π Βµ Π Π…Π Β°Π β„–Π Ò‘Π ΒµΠ Π…. Π Ρ’Π Π†Π΅β€Π Ρ•Π Ρ—Π Ρ•Π Ò‘Π Β±Π Ρ•Π΅Π‚ Π Ρ—Π΅Π‚Π Ρ•Π Ρ—Π΅Ρ“Π΅β€°Π ΒµΠ Π… Π Ò‘Π Β»Π΅Π ${label}.${plain}"
+		echo -e "${yellow}curl ¦ΰ¦Ε¦ΰT¦ ¦ΰ¦Ε¦ΰT-¦ΰςΔΦ¦ΰTΡ¦ΰT¦¦ΰ¦Ε. ¦ΰTÒ¦ΰ¦Ζ¦αςΐΪ¦ΰTΥ¦ΰTΧ¦ΰTΥ¦ΰTΡ¦ΰT-¦ΰTΥ¦α¦Β ¦ΰTΧ¦α¦Β¦ΰTΥ¦ΰTΧ¦αTΣ¦αςΐ-¦ΰT¦¦ΰ¦Ε ¦ΰTΡ¦ΰT¬¦α¦Ο ${label}.${plain}"
 		return 1
 	fi
 
 	mkdir -p "$TMP_DIR"
-	ensure_category_files
-	ensure_blob_files
+	if [ ! -s "$CATEGORIES_FILE" ]; then
+		echo -e "${yellow}¦ΰTδ¦ΰT-¦ΰςΔΦ¦ΰT¬ ¦ΰTΤ¦ΰT-¦αςΐΪ¦ΰT¦¦ΰTΦ¦ΰTΥ¦α¦Β¦ΰTΡ¦ΰςΔΦ ¦ΰ¦Ε¦ΰT¦ ¦ΰ¦Ε¦ΰT-¦ΰςΔΦ¦ΰTΡ¦ΰT¦¦ΰ¦Ε. ¦ΰTÒ¦ΰ¦Ζ¦αςΐΪ¦ΰTΥ¦ΰTΧ¦ΰTΥ¦ΰTΡ¦ΰT-¦ΰTΥ¦α¦Β ¦ΰTΧ¦α¦Β¦ΰTΥ¦ΰTΧ¦αTΣ¦αςΐ-¦ΰT¦¦ΰ¦Ε ¦ΰTΡ¦ΰT¬¦α¦Ο ${label}.${plain}"
+		return 0
+	fi
 	mode=$(get_category_value "$section" "filter_mode")
 	hostlist=$(get_category_value "$section" "hostlist")
 	ipset=$(get_category_value "$section" "ipset")
@@ -1553,7 +1601,7 @@ auto_pick_category() {
 		*) filter_file="" ;;
 	esac
 	if [ -n "$filter_file" ] && [ ! -s "$LISTS_DIR/$filter_file" ]; then
-		echo -e "${yellow}Π ΠΠ Ρ—Π Ρ‘Π΅ΠƒΠ Ρ•Π Ρ” $LISTS_DIR/$filter_file Π Π…Π Βµ Π Π…Π Β°Π β„–Π Ò‘Π ΒµΠ Π… Π Ρ‘Π Β»Π Ρ‘ Π Ρ—Π΅Ρ“Π΅ΠƒΠ΅β€Π Ρ•Π β„–. Π Ρ’Π Π†Π΅β€Π Ρ•Π Ρ—Π Ρ•Π Ò‘Π Β±Π Ρ•Π΅Π‚ Π Ρ—Π΅Π‚Π Ρ•Π Ρ—Π΅Ρ“Π΅β€°Π ΒµΠ Π… Π Ò‘Π Β»Π΅Π ${label}.${plain}"
+		echo -e "${yellow}¦ΰ¦Ξ¦ΰTΧ¦ΰTΡ¦α¦Γ¦ΰTΥ¦ΰTΤ $LISTS_DIR/$filter_file ¦ΰ¦Ε¦ΰT¦ ¦ΰ¦Ε¦ΰT-¦ΰςΔΦ¦ΰTΡ¦ΰT¦¦ΰ¦Ε ¦ΰTΡ¦ΰT¬¦ΰTΡ ¦ΰTΧ¦αTΣ¦α¦Γ¦αςΐΪ¦ΰTΥ¦ΰςΔΦ. ¦ΰTÒ¦ΰ¦Ζ¦αςΐΪ¦ΰTΥ¦ΰTΧ¦ΰTΥ¦ΰTΡ¦ΰT-¦ΰTΥ¦α¦Β ¦ΰTΧ¦α¦Β¦ΰTΥ¦ΰTΧ¦αTΣ¦αςΐ-¦ΰT¦¦ΰ¦Ε ¦ΰTΡ¦ΰT¬¦α¦Ο ${label}.${plain}"
 		return 0
 	fi
 
@@ -1562,12 +1610,19 @@ auto_pick_category() {
 		stun) ini_file="$STRAT_STUN_FILE" ;;
 		*) ini_file="$STRAT_TCP_FILE" ;;
 	esac
+	if [ ! -s "$ini_file" ]; then
+		echo -e "${yellow}¦ΰTδ¦ΰT-¦ΰςΔΦ¦ΰT¬ ¦α¦Γ¦αςΐΪ¦α¦Β¦ΰT-¦αςΐΪ¦ΰT¦¦ΰTΦ¦ΰTΡ¦ΰςΔΦ ¦ΰ¦Ε¦ΰT¦ ¦ΰ¦Ε¦ΰT-¦ΰςΔΦ¦ΰTΡ¦ΰT¦¦ΰ¦Ε. ¦ΰTÒ¦ΰ¦Ζ¦αςΐΪ¦ΰTΥ¦ΰTΧ¦ΰTΥ¦ΰTΡ¦ΰT-¦ΰTΥ¦α¦Β ¦ΰTΧ¦α¦Β¦ΰTΥ¦ΰTΧ¦αTΣ¦αςΐ-¦ΰT¦¦ΰ¦Ε ¦ΰTΡ¦ΰT¬¦α¦Ο ${label}.${plain}"
+		return 0
+	fi
+	if [ ! -s "$BLOBS_FILE" ]; then
+		echo -e "${yellow}¦ΰTδ¦ΰT-¦ΰςΔΦ¦ΰT¬ blobs ¦ΰ¦Ε¦ΰT¦ ¦ΰ¦Ε¦ΰT-¦ΰςΔΦ¦ΰTΡ¦ΰT¦¦ΰ¦Ε. ¦ΰTΰ¦ΰT¦¦ΰT¬¦αTΣ¦ΰT¬¦α¦Κ¦αςΐΪ¦ΰT-¦αςΐΪ¦αςΐ¦ ¦ΰT-¦ΰ¦Ζ¦αςΐΪ¦ΰTΥ¦ΰTΧ¦ΰTΥ¦ΰTΡ¦ΰT-¦ΰTΥ¦α¦Β¦ΰT- ¦ΰTΨ¦ΰTΥ¦ΰTΦ¦αTΣ¦αςΐΪ ¦ΰT-¦αςΐ¦¦αςΐΪ¦α¦Κ ¦ΰ¦Ε¦ΰT¦¦ΰTΤ¦ΰTΥ¦α¦Β¦α¦Β¦ΰT¦¦ΰTΤ¦αςΐΪ¦ΰ¦Ε¦αςΐ¦.${plain}"
+	fi
 
 	tmpfile="$TMP_DIR/z24k-strats-auto.list"
 	list_strategies "$ini_file" > "$tmpfile"
 	count=$(wc -l < "$tmpfile" 2>/dev/null || echo 0)
 	if [ "$count" -le 0 ]; then
-		echo -e "${yellow}Π ΠΠ Ρ—Π Ρ‘Π΅ΠƒΠ Ρ•Π Ρ” Π΅ΠƒΠ΅β€Π΅Π‚Π Β°Π΅β€Π ΒµΠ Ρ–Π Ρ‘Π β„– Π Ρ—Π΅Ρ“Π΅ΠƒΠ΅β€ Π Ò‘Π Β»Π΅Π ${label}.${plain}"
+		echo -e "${yellow}¦ΰ¦Ξ¦ΰTΧ¦ΰTΡ¦α¦Γ¦ΰTΥ¦ΰTΤ ¦α¦Γ¦αςΐΪ¦α¦Β¦ΰT-¦αςΐΪ¦ΰT¦¦ΰTΦ¦ΰTΡ¦ΰςΔΦ ¦ΰTΧ¦αTΣ¦α¦Γ¦αςΐΪ ¦ΰTΡ¦ΰT¬¦α¦Ο ${label}.${plain}"
 		return 1
 	fi
 
@@ -1662,38 +1717,38 @@ show_status() {
 		running="running"
 	fi
 
-	echo -e "${cyan}--- Π ΠΠ΅β€Π Β°Π΅β€Π΅Ρ“Π΅Πƒ ---${plain}"
-	echo "Π ΠΠ΅ΠƒΠ΅β€Π Β°Π Π…Π Ρ•Π Π†Π Β»Π ΒµΠ Π…Π Ρ•: $installed"
-	echo "Π ΡΠ΅Π‚Π ΒµΠ΅ΠƒΠ ΒµΠ΅β€: $preset"
+	echo -e "${cyan}--- ¦ΰ¦Ξ¦αςΐΪ¦ΰT-¦αςΐΪ¦αTΣ¦α¦Γ ---${plain}"
+	echo "¦ΰ¦Θ¦α¦Γ¦αςΐΪ¦ΰT-¦ΰ¦Ε¦ΰTΥ¦ΰ¦Ζ¦ΰT¬¦ΰT¦¦ΰ¦Ε¦ΰTΥ: $installed"
+	echo "¦ΰTί¦α¦Β¦ΰT¦¦α¦Γ¦ΰT¦¦αςΐΪ: $preset"
 	echo "NFQWS2_ENABLE: $enable"
 	echo "nfqws2: $running"
 }
 
 menu() {
 	safe_clear
-	echo -e "${cyan}--- z24k Π ΡΠ ΒµΠ Π…Π΅Π‹ ---${plain}"
+	echo -e "${cyan}--- z24k ¦ΰTΨ¦ΰT¦¦ΰ¦Ε¦α¦Λ ---${plain}"
 	show_status
 	echo ""
-	menu_item "1" "Π ΠΠ΅ΠƒΠ΅β€Π Β°Π Π…Π Ρ•Π Π†Π Ρ”Π Β°/Π Ρ›Π Β±Π Π…Π Ρ•Π Π†Π Β»Π ΒµΠ Π…Π Ρ‘Π Βµ" ""
-	menu_item "2" "Π ΠΠ Ò‘Π Β°Π Β»Π ΒµΠ Π…Π Ρ‘Π Βµ" ""
+	menu_item "1" "¦ΰ¦Θ¦α¦Γ¦αςΐΪ¦ΰT-¦ΰ¦Ε¦ΰTΥ¦ΰ¦Ζ¦ΰTΤ¦ΰT-/¦ΰTΫ¦ΰT-¦ΰ¦Ε¦ΰTΥ¦ΰ¦Ζ¦ΰT¬¦ΰT¦¦ΰ¦Ε¦ΰTΡ¦ΰT¦" ""
+	menu_item "2" "¦ΰ¦Θ¦ΰTΡ¦ΰT-¦ΰT¬¦ΰT¦¦ΰ¦Ε¦ΰTΡ¦ΰT¦" ""
 	if is_installed; then
-		menu_item "3" "Π ΠΠ΅β€Π΅Π‚Π Β°Π΅β€Π ΒµΠ Ρ–Π Ρ‘Π΅Π: Π Ρ™Π Β°Π΅β€Π ΒµΠ Ρ–Π Ρ•Π΅Π‚Π Ρ‘Π Ρ‘ (community)" ""
-		menu_item "4" "Π Ρ›Π Β±Π Π…Π Ρ•Π Π†Π Ρ‘Π΅β€Π΅Π Π Π†Π΅ΠƒΠ Βµ Π΅ΠƒΠ Ρ—Π Ρ‘Π΅ΠƒΠ Ρ”Π Ρ‘" ""
-		menu_item "5" "Π Β Π ΒµΠ Ò‘Π Β°Π Ρ”Π΅β€Π Ρ‘Π΅Π‚Π Ρ•Π Π†Π Β°Π΅β€Π΅Π Π Ρ”Π Β°Π΅β€Π ΒµΠ Ρ–Π Ρ•Π΅Π‚Π Ρ‘Π Ρ‘" ""
-		menu_item "6" "Π ΡΠ Ρ•Π Ò‘Π Β±Π Ρ•Π΅Π‚ Π΅ΠƒΠ΅β€Π΅Π‚Π Β°Π΅β€Π ΒµΠ Ρ–Π Ρ‘Π β„– (Π Ρ”Π Β°Π Ρ” magisk)" ""
-		menu_item "7" "Π β€”Π Β°Π Ρ—Π΅Ρ“Π΅ΠƒΠ΅β€Π Ρ‘Π΅β€Π΅Π blockcheck2 (Π Ρ‘Π Π…Π΅β€Π ΒµΠ΅Π‚Π Β°Π Ρ”Π΅β€Π Ρ‘Π Π†Π Π…Π Ρ•)" ""
-		menu_item "8" "Π ΡΠ ΒµΠ΅ΠƒΠ΅β€ Π΅ΠƒΠ΅β€Π΅Π‚Π Β°Π΅β€Π ΒµΠ Ρ–Π Ρ‘Π β„– (Π Β°Π Π†Π΅β€Π Ρ•)" ""
-		menu_item "9" "Π Ρ›Π Β±Π Π…Π Ρ•Π Π†Π Ρ‘Π΅β€Π΅Π Π΅ΠƒΠ Ρ—Π Ρ‘Π΅ΠƒΠ Ρ•Π Ρ” RKN" ""
-		menu_item "10" "Π β€™Π Ρ”Π Β»/Π β€™Π΅β€ΉΠ Ρ”Π Β» NFQWS2" ""
-		menu_item "11" "Π ΡΠ ΒµΠ΅Π‚Π ΒµΠ Β·Π Β°Π Ρ—Π΅Ρ“Π΅ΠƒΠ Ρ” Π΅ΠƒΠ ΒµΠ΅Π‚Π Π†Π Ρ‘Π΅ΠƒΠ Β°" ""
-		menu_item "12" "Π ΡΠ Ρ•Π Ρ”Π Β°Π Β·Π Β°Π΅β€Π΅Π Π΅ΠƒΠ΅β€Π Β°Π΅β€Π΅Ρ“Π΅Πƒ" ""
-		menu_item "13" "Π ΡΠ Ρ•Π Ρ”Π Β°Π Β·Π Β°Π΅β€Π΅Π Π΅ΠƒΠ΅β€Π΅Π‚Π Β°Π΅β€Π ΒµΠ Ρ–Π Ρ‘Π Ρ‘ Π Ρ”Π Β°Π΅β€Π ΒµΠ Ρ–Π Ρ•Π΅Π‚Π Ρ‘Π β„–" ""
-		menu_item "14" "Π ΡΠ Ρ•Π Ρ”Π Β°Π Β·Π Β°Π΅β€Π΅Π NFQWS2_OPT (Π Ρ”Π Β°Π΅β€Π ΒµΠ Ρ–Π Ρ•Π΅Π‚Π Ρ‘Π Ρ‘)" ""
-		menu_item "15" "Π Β Π ΒµΠ Ò‘Π Β°Π Ρ”Π΅β€Π Ρ‘Π΅Π‚Π Ρ•Π Π†Π Β°Π΅β€Π΅Π config" ""
+		menu_item "3" "¦ΰ¦Ξ¦αςΐΪ¦α¦Β¦ΰT-¦αςΐΪ¦ΰT¦¦ΰTΦ¦ΰTΡ¦α¦Ο: ¦ΰTΩ¦ΰT-¦αςΐΪ¦ΰT¦¦ΰTΦ¦ΰTΥ¦α¦Β¦ΰTΡ¦ΰTΡ (community)" ""
+		menu_item "4" "¦ΰTΫ¦ΰT-¦ΰ¦Ε¦ΰTΥ¦ΰ¦Ζ¦ΰTΡ¦αςΐΪ¦α¦Κ ¦ΰ¦Ζ¦α¦Γ¦ΰT¦ ¦α¦Γ¦ΰTΧ¦ΰTΡ¦α¦Γ¦ΰTΤ¦ΰTΡ" ""
+		menu_item "5" "¦ΰTΰ¦ΰT¦¦ΰTΡ¦ΰT-¦ΰTΤ¦αςΐΪ¦ΰTΡ¦α¦Β¦ΰTΥ¦ΰ¦Ζ¦ΰT-¦αςΐΪ¦α¦Κ ¦ΰTΤ¦ΰT-¦αςΐΪ¦ΰT¦¦ΰTΦ¦ΰTΥ¦α¦Β¦ΰTΡ¦ΰTΡ" ""
+		menu_item "6" "¦ΰTί¦ΰTΥ¦ΰTΡ¦ΰT-¦ΰTΥ¦α¦Β ¦α¦Γ¦αςΐΪ¦α¦Β¦ΰT-¦αςΐΪ¦ΰT¦¦ΰTΦ¦ΰTΡ¦ΰςΔΦ (¦ΰTΤ¦ΰT-¦ΰTΤ magisk)" ""
+		menu_item "7" "¦ΰςΐΤ¦ΰT-¦ΰTΧ¦αTΣ¦α¦Γ¦αςΐΪ¦ΰTΡ¦αςΐΪ¦α¦Κ blockcheck2 (¦ΰTΡ¦ΰ¦Ε¦αςΐΪ¦ΰT¦¦α¦Β¦ΰT-¦ΰTΤ¦αςΐΪ¦ΰTΡ¦ΰ¦Ζ¦ΰ¦Ε¦ΰTΥ)" ""
+		menu_item "8" "¦ΰTή¦ΰT¦¦α¦Γ¦αςΐΪ ¦α¦Γ¦αςΐΪ¦α¦Β¦ΰT-¦αςΐΪ¦ΰT¦¦ΰTΦ¦ΰTΡ¦ΰςΔΦ (¦ΰT-¦ΰ¦Ζ¦αςΐΪ¦ΰTΥ)" ""
+		menu_item "9" "¦ΰTΫ¦ΰT-¦ΰ¦Ε¦ΰTΥ¦ΰ¦Ζ¦ΰTΡ¦αςΐΪ¦α¦Κ ¦α¦Γ¦ΰTΧ¦ΰTΡ¦α¦Γ¦ΰTΥ¦ΰTΤ RKN" ""
+		menu_item "10" "¦ΰςΐΩ¦ΰTΤ¦ΰT¬/¦ΰςΐΩ¦αςΐ¦¦ΰTΤ¦ΰT¬ NFQWS2" ""
+		menu_item "11" "¦ΰTί¦ΰT¦¦α¦Β¦ΰT¦¦ΰT¬¦ΰT-¦ΰTΧ¦αTΣ¦α¦Γ¦ΰTΤ ¦α¦Γ¦ΰT¦¦α¦Β¦ΰ¦Ζ¦ΰTΡ¦α¦Γ¦ΰT-" ""
+		menu_item "12" "¦ΰTί¦ΰTΥ¦ΰTΤ¦ΰT-¦ΰT¬¦ΰT-¦αςΐΪ¦α¦Κ ¦α¦Γ¦αςΐΪ¦ΰT-¦αςΐΪ¦αTΣ¦α¦Γ" ""
+		menu_item "13" "¦ΰTί¦ΰTΥ¦ΰTΤ¦ΰT-¦ΰT¬¦ΰT-¦αςΐΪ¦α¦Κ ¦α¦Γ¦αςΐΪ¦α¦Β¦ΰT-¦αςΐΪ¦ΰT¦¦ΰTΦ¦ΰTΡ¦ΰTΡ ¦ΰTΤ¦ΰT-¦αςΐΪ¦ΰT¦¦ΰTΦ¦ΰTΥ¦α¦Β¦ΰTΡ¦ΰςΔΦ" ""
+		menu_item "14" "¦ΰTί¦ΰTΥ¦ΰTΤ¦ΰT-¦ΰT¬¦ΰT-¦αςΐΪ¦α¦Κ NFQWS2_OPT (¦ΰTΤ¦ΰT-¦αςΐΪ¦ΰT¦¦ΰTΦ¦ΰTΥ¦α¦Β¦ΰTΡ¦ΰTΡ)" ""
+		menu_item "15" "¦ΰTΰ¦ΰT¦¦ΰTΡ¦ΰT-¦ΰTΤ¦αςΐΪ¦ΰTΡ¦α¦Β¦ΰTΥ¦ΰ¦Ζ¦ΰT-¦αςΐΪ¦α¦Κ config" ""
 	fi
-	menu_item "0" "Π β€™Π΅β€ΉΠ΅β€¦Π Ρ•Π Ò‘" ""
+	menu_item "0" "¦ΰςΐΩ¦αςΐ¦¦αςΐζ¦ΰTΥ¦ΰTΡ" ""
 	echo ""
-	read_tty "Π β€™Π Β°Π΅β‚¬ Π Π†Π΅β€ΉΠ Β±Π Ρ•Π΅Π‚: " ans
+	read_tty "¦ΰςΐΩ¦ΰT-¦αςΒμ ¦ΰ¦Ζ¦αςΐ¦¦ΰT-¦ΰTΥ¦α¦Β: " ans
 
 	case "$ans" in
 		1) do_install ;;
@@ -1717,7 +1772,7 @@ menu() {
 		14) show_category_command && pause_enter ;;
 		15) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
 		0|"") exit 0 ;;
-		*) echo -e "${yellow}Π ΡΠ ΒµΠ Π†Π ΒµΠ΅Π‚Π Π…Π΅β€ΉΠ β„– Π Π†Π Π†Π Ρ•Π Ò‘.${plain}"; sleep 1 ;;
+		*) echo -e "${yellow}¦ΰTά¦ΰT¦¦ΰ¦Ζ¦ΰT¦¦α¦Β¦ΰ¦Ε¦αςΐ¦¦ΰςΔΦ ¦ΰ¦Ζ¦ΰ¦Ζ¦ΰTΥ¦ΰTΡ.${plain}"; sleep 1 ;;
 	esac
 
 	menu
@@ -1725,3 +1780,4 @@ menu() {
 
 log "Menu version $SCRIPT_VERSION"
 menu
+
