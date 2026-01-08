@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-70"
+SCRIPT_VERSION="2026-01-07-71"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1570,6 +1570,20 @@ show_category_strategies() {
 	echo "Custom: ${s:-disabled}"
 }
 
+show_category_command() {
+	local opt
+	echo -e "${cyan}--- NFQWS2_OPT (Категории) ---${plain}"
+	ensure_category_files
+	ensure_blob_files
+	sync_category_lists
+	opt=$(build_opt_from_categories)
+	if [ -n "$opt" ]; then
+		printf "%s\n" "$opt"
+	else
+		echo -e "${yellow}Пусто. Категории не собраны.${plain}"
+	fi
+}
+
 ensure_rkn_bootstrap_hosts() {
 	local f
 	f="$INSTALL_DIR/ipset/zapret-hosts-user.txt"
@@ -1688,7 +1702,8 @@ menu() {
 		menu_item "11" "Перезапуск сервиса" ""
 		menu_item "12" "Показать статус" ""
 		menu_item "13" "Показать стратегии категорий" ""
-		menu_item "14" "Редактировать config" ""
+		menu_item "14" "Показать NFQWS2_OPT (категории)" ""
+		menu_item "15" "Редактировать config" ""
 	fi
 	menu_item "0" "Выход" ""
 	echo ""
@@ -1713,7 +1728,8 @@ menu() {
 		11) is_installed && restart_service && pause_enter ;;
 		12) show_status && pause_enter ;;
 		13) show_category_strategies && pause_enter ;;
-		14) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
+		14) show_category_command && pause_enter ;;
+		15) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
 		0|"") exit 0 ;;
 		*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
 	esac
