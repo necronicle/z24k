@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-62"
+SCRIPT_VERSION="2026-01-07-63"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1359,6 +1359,7 @@ set_category_strategy() {
 	section="$1"
 	value="$2"
 	tmpfile="$TMP_DIR/z24k-categories.tmp"
+	mkdir -p "$TMP_DIR"
 	awk -v s="$section" -v v="$value" '
 		$0 ~ "^\\["s"\\]$" {in=1; print; next}
 		in && /^\\[/ {in=0}
@@ -1422,6 +1423,7 @@ pick_strategy_interactive() {
 	proto="$2"
 	label="$3"
 	url="$4"
+	mkdir -p "$TMP_DIR"
 
 	case "$proto" in
 		udp) ini_file="$STRAT_UDP_FILE" ;;
