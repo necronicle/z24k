@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-81"
+SCRIPT_VERSION="2026-01-07-82"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -95,9 +95,15 @@ fetch() {
 	out="$2"
 
 	if need_cmd curl; then
-		curl -fsSL --connect-timeout 10 --max-time 60 --retry 3 "$url" -o "$out"
+		if ! curl -fsSL --connect-timeout 10 --max-time 60 --retry 3 "$url" -o "$out"; then
+			echo -e "${yellow}Download failed: $url${plain}"
+			return 1
+		fi
 	elif need_cmd wget; then
-		wget -qO "$out" --dns-timeout=10 --connect-timeout=10 --read-timeout=60 "$url"
+		if ! wget -qO "$out" --dns-timeout=10 --connect-timeout=10 --read-timeout=60 "$url"; then
+			echo -e "${yellow}Download failed: $url${plain}"
+			return 1
+		fi
 	else
 		echo "curl or wget is required" >&2
 		exit 1
@@ -1522,7 +1528,7 @@ test_http3() {
 }
 
 auto_pick_category() {
-	local section proto label url ini_file tmpfile count idx strat prev found
+	local section proto label url ini_file tmpfile count idx strat prev found mode hostlist ipset filter_file
 	section="$1"
 	proto="$2"
 	label="$3"
@@ -1537,6 +1543,19 @@ auto_pick_category() {
 	ensure_category_files
 	ensure_blob_files
 	fetch_category_lists "$section"
+	mode=$(get_category_value "$section" "filter_mode")
+	hostlist=$(get_category_value "$section" "hostlist")
+	ipset=$(get_category_value "$section" "ipset")
+	filter_file=""
+	case "$mode" in
+		ipset) filter_file="$ipset" ;;
+		hostlist) filter_file="$hostlist" ;;
+		*) filter_file="" ;;
+	esac
+	if [ -n "$filter_file" ] && [ ! -s "$LISTS_DIR/$filter_file" ]; then
+		echo -e "${yellow}Список $LISTS_DIR/$filter_file не найден или пустой. Автоподбор пропущен для ${label}.${plain}"
+		return 0
+	fi
 
 	case "$proto" in
 		udp) ini_file="$STRAT_UDP_FILE" ;;
