@@ -335,7 +335,7 @@ do_install() {
 	ensure_category_files
 	sync_all_lists
 	ensure_blob_files
-	if true; then
+	if ! required_lists_ok; then
 		echo -e "${yellow}Списки не найдены или пустые после обновления. Автоподбор будет пропущен.${plain}"
 	fi
 
@@ -1680,13 +1680,13 @@ auto_pick_category() {
 }
 
 auto_pick_all_categories() {
-	local ylist gvlist
-	ylist="$LISTS_DIR/ipset-youtube.txt"
-	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
-	if true; then
-		echo -e "${yellow}Списки не найдены или пустые. Обновите списки и запустите автоподбор снова.${plain}"
-		return 0
-	fi
+		local ylist gvlist
+		ylist="$LISTS_DIR/ipset-youtube.txt"
+		gvlist="$LISTS_DIR/ipset-googlevideo.txt"
+		if ! required_lists_ok; then
+			echo -e "${yellow}Списки не найдены или пустые. Обновите списки и запустите автоподбор снова.${plain}"
+			return 0
+		fi
 	echo -e "${cyan}Автоподбор стратегий для категорий...${plain}"
 	auto_pick_category "youtube" "tcp" "YouTube TCP" "https://www.youtube.com/" || true
 	auto_pick_category "youtube_udp" "udp" "YouTube UDP" "https://www.youtube.com/" || true
