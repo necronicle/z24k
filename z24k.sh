@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-08-122"
+SCRIPT_VERSION="2026-01-08-123"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -16,6 +16,8 @@ STUN_RAW="$Z24K_RAW/strategies-stun.ini"
 BLOBS_RAW="$Z24K_RAW/blobs.txt"
 FAKES_TARBALL_RAW="https://raw.githubusercontent.com/IndeecFOX/zapret4rocket/z2r/fake_files.tar.gz"
 Z2R_CFG_RAW="https://raw.githubusercontent.com/IndeecFOX/zapret4rocket/z2r/config.default"
+Z2R_RAW_TCP="https://raw.githubusercontent.com/necronicle/z24k/master/z2r-strategies-tcp.raw"
+Z2R_RAW_UDP="https://raw.githubusercontent.com/necronicle/z24k/master/z2r-strategies-udp.raw"
 INSTALL_DIR="/opt/zapret2"
 TMP_DIR="/tmp/zapret2-install"
 LISTS_DIR="$INSTALL_DIR"
@@ -31,6 +33,8 @@ STRAT_UDP_FILE="$INSTALL_DIR/z24k-strategies-udp.ini"
 STRAT_STUN_FILE="$INSTALL_DIR/z24k-strategies-stun.ini"
 BLOBS_FILE="$INSTALL_DIR/z24k-blobs.txt"
 Z2R_CFG_FILE="$INSTALL_DIR/z2r-config.default"
+Z2R_RAW_TCP_FILE="$INSTALL_DIR/z2r-strategies-tcp.raw"
+Z2R_RAW_UDP_FILE="$INSTALL_DIR/z2r-strategies-udp.raw"
 
 plain='\033[0m'
 red='\033[0;31m'
@@ -340,6 +344,12 @@ ensure_z2r_config() {
 	fetch "$Z2R_CFG_RAW" "$Z2R_CFG_FILE" || true
 }
 
+ensure_z2r_strategies() {
+	[ "${Z24K_NO_FETCH:-0}" = "1" ] && return 0
+	[ -s "$Z2R_RAW_TCP_FILE" ] || fetch "$Z2R_RAW_TCP" "$Z2R_RAW_TCP_FILE" || true
+	[ -s "$Z2R_RAW_UDP_FILE" ] || fetch "$Z2R_RAW_UDP" "$Z2R_RAW_UDP_FILE" || true
+}
+
 apply_kv_from_file() {
 	local file key val
 	file="$1"
@@ -395,6 +405,7 @@ do_install() {
 	ensure_fake_files_tarball
 	ensure_blob_files
 	ensure_z2r_config
+	ensure_z2r_strategies
 	if ! required_lists_ok; then
 		echo -e "${yellow}Списки не найдены или пустые после обновления. Автоподбор будет пропущен.${plain}"
 	fi
@@ -412,7 +423,7 @@ do_install() {
 
 	"$SERVICE" restart
 	if required_lists_ok; then
-		auto_pick_all_categories
+		Z24K_AUTOPICK_RAW=1 auto_pick_all_categories
 	fi
 	log "Install complete."
 	pause_enter
@@ -1333,6 +1344,13 @@ build_category_opts() {
 	file="$3"
 	strategy="$4"
 	filter_opts=$(build_category_filter "$mode" "$file")
+	case "$strategy" in
+		raw:*)
+			id=${strategy#raw:}
+			printf "%s" "$(build_category_opts_raw "$proto" "$filter_opts" "$id")"
+			return
+			;;
+	esac
 	case "$proto" in
 		stun)
 			args=$(get_strategy_args_from_ini "$STRAT_STUN_FILE" "$strategy")
@@ -1354,6 +1372,50 @@ build_category_opts() {
 			full="--out-range=-n$PKT_OUT --filter-tcp=80,443"
 			[ -n "$filter_opts" ] && full="$full $filter_opts"
 			printf "%s %s" "$full" "$args"
+			;;
+	esac
+}
+
+list_raw_strategies() {
+	local file
+	file="$1"
+	[ -s "$file" ] || return 0
+	awk '/^##STRAT /{print $2}' "$file"
+}
+
+get_raw_strategy_block() {
+	local file id
+	file="$1"
+	id="$2"
+	[ -s "$file" ] || return 0
+	awk -v id="$id" '
+		/^##STRAT / { in_block = ($2==id); next }
+		/^##END/ { if (in_block) exit; in_block=0; next }
+		in_block { print }
+	' "$file"
+}
+
+build_category_opts_raw() {
+	local proto filter_opts id base block
+	proto="$1"
+	filter_opts="$2"
+	id="$3"
+	case "$proto" in
+		udp)
+			block=$(get_raw_strategy_block "$Z2R_RAW_UDP_FILE" "$id")
+			[ -n "$block" ] || return 1
+			base="--filter-udp=443"
+			[ -n "$filter_opts" ] && base="$base $filter_opts"
+			base="$base --in-range=-s5556 --lua-desync=circular --in-range=x --payload=quic_initial"
+			printf "%s\n%s" "$base" "$block"
+			;;
+		tcp|*)
+			block=$(get_raw_strategy_block "$Z2R_RAW_TCP_FILE" "$id")
+			[ -n "$block" ] || return 1
+			base="--qnum 300 --filter-tcp=80,443,2053,2083,2087,2096,8443"
+			[ -n "$filter_opts" ] && base="$base $filter_opts"
+			base="$base --in-range=-s5556 --lua-desync=circular --in-range=x --payload=tls_client_hello,http_req,http_reply"
+			printf "%s\n%s" "$base" "$block"
 			;;
 	esac
 }
@@ -1707,10 +1769,16 @@ auto_pick_category() {
 		*) ini_file="$STRAT_TCP_FILE" ;;
 	esac
 	[ "$section" = "rkn" ] && ini_file="$STRAT_RKN_FILE"
-	[ "$section" = "rkn" ] && ini_file="$STRAT_RKN_FILE"
 
 	tmpfile="$TMP_DIR/z24k-strats-auto.list"
-	list_strategies "$ini_file" > "$tmpfile"
+	if [ "${Z24K_AUTOPICK_RAW:-0}" = "1" ]; then
+		case "$proto" in
+			udp) list_raw_strategies "$Z2R_RAW_UDP_FILE" > "$tmpfile" ;;
+			tcp|*) list_raw_strategies "$Z2R_RAW_TCP_FILE" > "$tmpfile" ;;
+		esac
+	else
+		list_strategies "$ini_file" > "$tmpfile"
+	fi
 	count=$(wc -l < "$tmpfile" 2>/dev/null || echo 0)
 	if [ "$count" -le 0 ]; then
 		echo -e "${yellow}Список стратегий пуст для ${label}.${plain}"
@@ -1725,7 +1793,11 @@ auto_pick_category() {
 		fi
 		echo -e "${yellow}HTTP/3: SKIP (тесты UDP отключены)${plain}"
 		echo -e "${yellow}Применяю стратегию без проверки: ${label}.${plain}"
-		set_category_strategy "$section" "$strat"
+		if [ "${Z24K_AUTOPICK_RAW:-0}" = "1" ]; then
+			set_category_strategy "$section" "raw:$strat"
+		else
+			set_category_strategy "$section" "$strat"
+		fi
 		set_kv Z24K_PRESET categories
 		set_opt_block "$(preset_categories)"
 		restart_service_timeout || true
@@ -1739,7 +1811,11 @@ auto_pick_category() {
 	echo -e "${cyan}Автоподбор стратегии: ${green}${label}${plain}"
 	while IFS= read -r strat || [ -n "$strat" ]; do
 		idx=$((idx + 1))
-		set_category_strategy "$section" "$strat"
+		if [ "${Z24K_AUTOPICK_RAW:-0}" = "1" ]; then
+			set_category_strategy "$section" "raw:$strat"
+		else
+			set_category_strategy "$section" "$strat"
+		fi
 		set_kv Z24K_PRESET categories
 		set_opt_block "$(preset_categories)"
 		log "Пробую ${label} #${idx}: ${strat}"

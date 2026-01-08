@@ -18,12 +18,14 @@
 --blob=tls17:@bin/tls_clienthello_17.bin
 --blob=tls18:@bin/tls_clienthello_18.bin
 --blob=tls_google:@bin/tls_clienthello_www_google_com.bin
+--blob=google_www:@bin/tls_clienthello_www_google_com.bin
 --blob=tls_google2:@bin/tls_clienthello_www_google_com_2.bin
 --blob=tls_sber:@bin/tls_clienthello_sberbank_ru.bin
 --blob=tls_vk:@bin/tls_clienthello_vk_com.bin
 --blob=tls_vk_kyber:@bin/tls_clienthello_vk_com_kyber.bin
 --blob=tls_deepseek:@bin/tls_clienthello_chat_deepseek_com.bin
 --blob=tls_max:@bin/tls_clienthello_max_ru.bin
+--blob=maxru:@bin/tls_clienthello_max_ru.bin
 --blob=tls_4pda:@bin/tls_clienthello_4pda_to.bin
 --blob=tls_gosuslugi:@bin/tls_clienthello_gosuslugi_ru.bin
 --blob=tls_iana:@bin/tls_clienthello_iana_org.bin

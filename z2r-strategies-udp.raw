@@ -1,0 +1,51 @@
+##STRAT s1
+--lua-desync=fake:blob=quic5:repeats=3
+##END
+
+##STRAT s2
+--lua-desync=udplen:increment=4 --lua-desync=fake:blob=quic5:repeats=2
+##END
+
+##STRAT s3
+--lua-desync=udplen:increment=8:pattern=0xFEA82025 --lua-desync=fake:blob=quic5:repeats=2
+##END
+
+##STRAT s4
+--lua-desync=udplen:increment=25 --lua-desync=fake:blob=quic5:repeats=2
+##END
+
+##STRAT s5
+--lua-desync=fake:blob=quic_google:repeats=6
+##END
+
+##STRAT s6
+--lua-desync=fake:blob=quic_google:repeats=6
+##END
+
+##STRAT s7
+--lua-desync=fake:blob=quic_google:repeats=8
+##END
+
+##STRAT s8
+--lua-desync=fake:blob=quic_google:repeats=11
+##END
+
+##STRAT s9
+--lua-desync=fake:blob=quic_google:repeats=5 --lua-desync=udplen:increment=6:min=150
+##END
+
+##STRAT s10
+--lua-desync=udplen:increment=4:min=120 --lua-desync=fake:blob=quic5:repeats=2
+##END
+
+##STRAT s11
+--lua-desync=udplen:increment=8:pattern=0xC3000001 --lua-desync=fake:blob=quic5:repeats=3
+##END
+
+##STRAT s12
+--lua-desync=udplen:increment=20:min=200 --lua-desync=fake:blob=quic_google:repeats=3
+##END
+
+##STRAT s13
+--lua-desync=fake:blob=quic5:repeats=1 --lua-desync=fake:blob=quic_google:repeats=3
+##END
