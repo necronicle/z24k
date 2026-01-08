@@ -89,9 +89,9 @@ fetch() {
 	out="$2"
 
 	if need_cmd curl; then
-		curl -fsSL --connect-timeout 5 --max-time 20 --retry 1 "$url" -o "$out"
+		curl -fsSL --connect-timeout 10 --max-time 60 --retry 3 "$url" -o "$out"
 	elif need_cmd wget; then
-		wget -qO "$out" --dns-timeout=5 --connect-timeout=5 --read-timeout=20 "$url"
+		wget -qO "$out" --dns-timeout=10 --connect-timeout=10 --read-timeout=60 "$url"
 	else
 		echo "curl or wget is required" >&2
 		exit 1
