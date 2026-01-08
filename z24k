@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-108"
+SCRIPT_VERSION="2026-01-07-109"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -117,10 +117,10 @@ get_latest_ver() {
 
 	if need_cmd curl; then
 		loc=$(curl -fsSI -o /dev/null -w "%{redirect_url}" "$rel" 2>/dev/null) || loc=""
-		ver=$(printf "%s" "$loc" | sed -n 's|.*/tag/v\([0-9.]*\).*|\\1|p' | head -n1)
+		ver=$(printf "%s" "$loc" | sed -n 's|.*/tag/v\([0-9.]*\).*|\1|p' | head -n1)
 	elif need_cmd wget; then
 		loc=$(wget -S -qO- "$rel" 2>&1 | sed -n 's/^[Ll]ocation: *//p' | head -n1 | tr -d '\r')
-		ver=$(printf "%s" "$loc" | sed -n 's|.*/tag/v\([0-9.]*\).*|\\1|p' | head -n1)
+		ver=$(printf "%s" "$loc" | sed -n 's|.*/tag/v\([0-9.]*\).*|\1|p' | head -n1)
 	fi
 
 	if [ -n "$ver" ]; then
