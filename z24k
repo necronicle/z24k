@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-08-121"
+SCRIPT_VERSION="2026-01-08-122"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -15,6 +15,7 @@ UDP_RAW="$Z24K_RAW/strategies-udp.ini"
 STUN_RAW="$Z24K_RAW/strategies-stun.ini"
 BLOBS_RAW="$Z24K_RAW/blobs.txt"
 FAKES_TARBALL_RAW="https://raw.githubusercontent.com/IndeecFOX/zapret4rocket/z2r/fake_files.tar.gz"
+Z2R_CFG_RAW="https://raw.githubusercontent.com/IndeecFOX/zapret4rocket/z2r/config.default"
 INSTALL_DIR="/opt/zapret2"
 TMP_DIR="/tmp/zapret2-install"
 LISTS_DIR="$INSTALL_DIR"
@@ -29,6 +30,7 @@ STRAT_RKN_FILE="$INSTALL_DIR/z24k-strategies-tcp-rkn.ini"
 STRAT_UDP_FILE="$INSTALL_DIR/z24k-strategies-udp.ini"
 STRAT_STUN_FILE="$INSTALL_DIR/z24k-strategies-stun.ini"
 BLOBS_FILE="$INSTALL_DIR/z24k-blobs.txt"
+Z2R_CFG_FILE="$INSTALL_DIR/z2r-config.default"
 
 plain='\033[0m'
 red='\033[0;31m'
@@ -332,6 +334,37 @@ ensure_fake_files_tarball() {
 	fi
 }
 
+ensure_z2r_config() {
+	[ "${Z24K_NO_FETCH:-0}" = "1" ] && return 0
+	[ -s "$Z2R_CFG_FILE" ] && return 0
+	fetch "$Z2R_CFG_RAW" "$Z2R_CFG_FILE" || true
+}
+
+apply_kv_from_file() {
+	local file key val
+	file="$1"
+	[ -f "$file" ] || return 0
+	for key in NFQWS2_ENABLE NFQWS2_PORTS_TCP NFQWS2_PORTS_UDP NFQWS2_TCP_PKT_OUT NFQWS2_TCP_PKT_IN NFQWS2_UDP_PKT_OUT NFQWS2_UDP_PKT_IN MODE_FILTER FLOWOFFLOAD; do
+		val=$(awk -F= -v k="$key" '
+			$0 ~ /^[[:space:]]*#/ {next}
+			$1==k {print substr($0, index($0,$2))}
+		' "$file" | tail -n1)
+		[ -n "$val" ] && set_kv "$key" "$val"
+	done
+}
+
+apply_z2r_preset() {
+	ensure_z2r_config
+	if [ ! -s "$Z2R_CFG_FILE" ]; then
+		echo -e "${yellow}z2r config not found: $Z2R_CFG_FILE${plain}"
+		return 1
+	fi
+	set_kv Z24K_PRESET z2r
+	set_opt_block "$(get_opt_block "$Z2R_CFG_FILE")"
+	apply_kv_from_file "$Z2R_CFG_FILE"
+	return 0
+}
+
 do_install() {
 	if [ ! -d /opt ]; then
 		echo "/opt is required (Entware). Install Entware first." >&2
@@ -361,6 +394,7 @@ do_install() {
 	sync_all_lists
 	ensure_fake_files_tarball
 	ensure_blob_files
+	ensure_z2r_config
 	if ! required_lists_ok; then
 		echo -e "${yellow}Списки не найдены или пустые после обновления. Автоподбор будет пропущен.${plain}"
 	fi
@@ -2016,19 +2050,20 @@ menu() {
 	menu_item "2" "Удаление" ""
 	if is_installed; then
 		menu_item "3" "Стратегия: Категории (community)" ""
-		menu_item "4" "Обновить все списки" ""
-		menu_item "5" "Редактировать категории" ""
-		menu_item "6" "Подбор стратегий (как z4r)" ""
-		menu_item "7" "Запустить blockcheck2 (интерактивно)" ""
-		menu_item "8" "Тест стратегий (авто)" ""
-		menu_item "9" "Обновить списки (z4r)" ""
-		menu_item "10" "Вкл/Выкл NFQWS2" ""
-		menu_item "11" "Остановить сервис" ""
-		menu_item "12" "Перезапуск сервиса" ""
-		menu_item "13" "Показать статус" ""
-		menu_item "14" "Показать стратегии категорий" ""
-		menu_item "15" "Показать NFQWS2_OPT (категории)" ""
-		menu_item "16" "Редактировать config" ""
+		menu_item "4" "Стратегия: z2r (raw config)" ""
+		menu_item "5" "Обновить все списки" ""
+		menu_item "6" "Редактировать категории" ""
+		menu_item "7" "Подбор стратегий (как z4r)" ""
+		menu_item "8" "Запустить blockcheck2 (интерактивно)" ""
+		menu_item "9" "Тест стратегий (авто)" ""
+		menu_item "10" "Обновить списки (z4r)" ""
+		menu_item "11" "Вкл/Выкл NFQWS2" ""
+		menu_item "12" "Остановить сервис" ""
+		menu_item "13" "Перезапуск сервиса" ""
+		menu_item "14" "Показать статус" ""
+		menu_item "15" "Показать стратегии категорий" ""
+		menu_item "16" "Показать NFQWS2_OPT (категории)" ""
+		menu_item "17" "Редактировать config" ""
 	fi
 	menu_item "0" "Выход" ""
 	echo ""
@@ -2038,19 +2073,20 @@ menu() {
 		1) do_install ;;
 		2) do_uninstall ;;
 		3) is_installed && apply_preset "categories" "$(preset_categories)" ;;
-		4) is_installed && sync_all_lists && pause_enter ;;
-		5) is_installed && ensure_category_files && ${EDITOR:-vi} "$CATEGORIES_FILE" ;;
-		6) is_installed && magisk_pick_menu ;;
-		7) is_installed && run_blockcheck ;;
-		8) is_installed && test_strategies ;;
-		9) is_installed && sync_all_lists && pause_enter ;;
-		10) is_installed && toggle_nfqws2 ;;
-		11) is_installed && stop_service && pause_enter ;;
-		12) is_installed && restart_service && pause_enter ;;
-		13) show_status && pause_enter ;;
-		14) show_category_strategies && pause_enter ;;
-		15) show_category_command && pause_enter ;;
-		16) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
+		4) is_installed && apply_z2r_preset && restart_service && pause_enter ;;
+		5) is_installed && sync_all_lists && pause_enter ;;
+		6) is_installed && ensure_category_files && ${EDITOR:-vi} "$CATEGORIES_FILE" ;;
+		7) is_installed && magisk_pick_menu ;;
+		8) is_installed && run_blockcheck ;;
+		9) is_installed && test_strategies ;;
+		10) is_installed && sync_all_lists && pause_enter ;;
+		11) is_installed && toggle_nfqws2 ;;
+		12) is_installed && stop_service && pause_enter ;;
+		13) is_installed && restart_service && pause_enter ;;
+		14) show_status && pause_enter ;;
+		15) show_category_strategies && pause_enter ;;
+		16) show_category_command && pause_enter ;;
+		17) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
 		0|"") exit 0 ;;
 		*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
 	esac
