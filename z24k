@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-91"
+SCRIPT_VERSION="2026-01-07-92"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -73,7 +73,7 @@ read_tty() {
 }
 
 pause_enter() {
-	read_tty "Enter ¦àTÑ¦àT¬¦á¦Ï ¦àT×¦á¦Â¦àTÕ¦àTÑ¦àTÕ¦àT¬¦àT¦¦àT¦¦à¦Å¦àTÑ¦á¦Ï" _
+	read_tty "Enter ??? ???????????" _
 }
 
 menu_item() {
@@ -337,7 +337,7 @@ do_install() {
 	sync_all_lists
 	ensure_blob_files
 	if ! ensure_autopick_lists; then
-		echo -e "${yellow}¦à¦Î¦àT×¦àTÑ¦á¦Ã¦àTÔ¦àTÑ ¦à¦Å¦àT¦ ¦à¦Å¦àT-¦àòÄÖ¦àTÑ¦àT¦¦à¦Å¦áòÀ¦ ¦àTÑ¦àT¬¦àTÑ ¦àT×¦áTÓ¦á¦Ã¦áòÀÚ¦áòÀ¦¦àT¦ ¦àT×¦àTÕ¦á¦Ã¦àT¬¦àT¦ ¦àTÕ¦àT-¦à¦Å¦àTÕ¦à¦Æ¦àT¬¦àT¦¦à¦Å¦àTÑ¦á¦Ï. ¦àTÒ¦à¦Æ¦áòÀÚ¦àTÕ¦àT×¦àTÕ¦àTÑ¦àT-¦àTÕ¦á¦Â ¦àT-¦áTÓ¦àTÑ¦àT¦¦áòÀÚ ¦àT×¦á¦Â¦àTÕ¦àT×¦áTÓ¦áòÀ-¦àT¦¦à¦Å.${plain}"
+		echo -e "${yellow}?????? ?? ??????? ??? ??????. ???????? ?????? ? ????????? ?????????? ?????.${plain}"
 	fi
 
 	if [ "$HAD_CONFIG" -eq 0 ]; then
@@ -361,7 +361,7 @@ do_install() {
 }
 
 do_uninstall() {
-	echo -e "${yellow}¦à¦È¦àTÑ¦àT-¦àT¬¦àT¦¦à¦Å¦àTÑ¦àT¦ zapret2 ¦àTÑ ¦á¦Ã¦àT¦¦á¦Â¦à¦Æ¦àTÑ¦á¦Ã¦àTÕ¦à¦Æ...${plain}"
+	echo -e "${yellow}???????? zapret2 ? ????????...${plain}"
 	if [ -x "$SERVICE" ]; then
 		"$SERVICE" stop || true
 	fi
@@ -370,7 +370,7 @@ do_uninstall() {
 	rm -f /opt/etc/init.d/S00fix
 	rm -f /opt/bin/z24k
 	rm -rf "$INSTALL_DIR"
-	echo -e "${green}¦à¦È¦àTÑ¦àT-¦àT¬¦àT¦¦à¦Å¦àTÑ¦àT¦ ¦àT¬¦àT-¦à¦Æ¦àT¦¦á¦Â¦áòÂì¦àT¦¦à¦Å¦àTÕ.${plain}"
+	echo -e "${green}???????? ?????????.${plain}"
 	pause_enter
 }
 
@@ -692,13 +692,13 @@ restart_service_quiet() {
 apply_preset() {
 	name="$1"
 	opt="$2"
-	echo -e "${cyan}Ïğèìåíåíèå ñòğàòåãèè: ${green}${name}${plain}"
+	echo -e "${cyan}ĞŸÑ€Ğ¸Ğ¼ĞµĞ½ĞµĞ½Ğ¸Ğµ ÑÑ‚Ñ€Ğ°Ñ‚ĞµĞ³Ğ¸Ğ¸: ${green}${name}${plain}"
 	ensure_split_hostlists
 	set_opt_block "$opt"
 	set_kv NFQWS2_ENABLE 1
 	set_kv Z24K_PRESET "$name"
 	restart_service
-	echo -e "${green}Ãîòîâî.${plain}"
+	echo -e "${green}Ğ“Ğ¾Ñ‚Ğ¾Ğ²Ğ¾.${plain}"
 	pause_enter
 }
 
@@ -755,7 +755,7 @@ auto_pick_strategy() {
 	else
 		domain=$(last_nonempty_line_any "$list_file")
 		if [ -z "$domain" ]; then
-			echo -e "${yellow}¦à¦Î¦àT×¦àTÑ¦á¦Ã¦àTÕ¦àTÔ ¦àT×¦áTÓ¦á¦Ã¦áòÀÚ¦àTÕ¦àòÄÖ: $list_file${plain}"
+			echo -e "${yellow}?????? ??????: $list_file${plain}"
 			pause_enter
 			return
 		fi
@@ -765,8 +765,8 @@ auto_pick_strategy() {
 		"$SERVICE" stop || true
 	fi
 
-	echo -e "${cyan}¦àTß¦àTÕ¦àTÑ¦àT-¦àTÕ¦á¦Â ¦á¦Ã¦áòÀÚ¦á¦Â¦àT-¦áòÀÚ¦àT¦¦àTÖ¦àTÑ¦àTÑ ¦àTÑ¦àT¬¦á¦Ï ${green}${label}${plain} (${domain})"
-	log "¦àòÀ¦¦àTÕ¦àTÖ blockcheck2: $logfile"
+	echo -e "${cyan}?????? ????????? ??? ${green}${label}${plain} (${domain})"
+	log "??? blockcheck2: $logfile"
 	: > "$logfile"
 	scanlevel=""
 	while :; do
@@ -784,7 +784,7 @@ auto_pick_strategy() {
 		export ENABLE_HTTP ENABLE_HTTPS_TLS12 ENABLE_HTTPS_TLS13 ENABLE_HTTP3
 		run_blockcheck_background "$logfile"
 		pid=$BLOCKCHECK_PID
-		echo -n "¦àTØ¦àTÑ¦àT¦¦áòÀÚ ¦àT×¦àTÕ¦àTÑ¦àT-¦àTÕ¦á¦Â"
+		echo -n "??????..."
 		found_tls=""
 		found_quic=""
 		last_entry=""
@@ -834,8 +834,8 @@ auto_pick_strategy() {
                 : > "$logfile"
                 continue
             fi
-			echo -e "${green}¦à¦Î¦áòÀÚ¦á¦Â¦àT-¦áòÀÚ¦àT¦¦àTÖ¦àTÑ¦á¦Ï ¦àT×¦á¦Â¦àTÑ¦àTØ¦àT¦¦à¦Å¦àT¦¦à¦Å¦àT- ¦à¦Æ¦á¦Â¦àT¦¦àTØ¦àT¦¦à¦Å¦à¦Å¦àTÕ. ¦àTß¦á¦Â¦àTÕ¦à¦Æ¦àT¦¦á¦Â¦á¦Ê¦áòÀÚ¦àT¦ ¦àTÑ¦àTÕ¦á¦Ã¦áòÀÚ¦áTÓ¦àT×¦à¦Å¦àTÕ¦á¦Ã¦áòÀÚ¦á¦Ê.${plain}"
-			read_tty "¦à¦Î¦àTÕ¦áòÀæ¦á¦Â¦àT-¦à¦Å¦àTÑ¦áòÀÚ¦á¦Ê (s), ¦àT×¦á¦Â¦àTÕ¦àTÑ¦àTÕ¦àT¬¦àT¦¦àTÑ¦áòÀÚ¦á¦Ê (c) ¦àTÑ¦àT¬¦àTÑ ¦à¦Æ¦áòÀ¦¦àòÄÖ¦áòÀÚ¦àTÑ (q)? " choice
+			echo -e "${green}????????? ??????? ? ?????????. ????????? ??????????? ???????.${plain}"
+			read_tty "????????? (s), ?????????? (c) ??? ????? (q)? " choice
 			case "$choice" in
 				s|S)
 					[ -n "$found_tls" ] && tls_strat="$found_tls"
@@ -870,7 +870,7 @@ auto_pick_strategy() {
 	fi
 
 	if [ -z "$tls_strat" ] && [ -z "$quic_strat" ]; then
-		echo -e "${yellow}¦à¦Î¦áòÀÚ¦á¦Â¦àT-¦áòÀÚ¦àT¦¦àTÖ¦àTÑ¦á¦Ï ¦à¦Å¦àT¦ ¦à¦Å¦àT-¦àòÄÖ¦àTÑ¦àT¦¦à¦Å¦àT-. ¦àòÀ¦¦àTÕ¦àTÖ: $logfile${plain}"
+		echo -e "${yellow}????????? ?? ???????. ???: $logfile${plain}"
 		pause_enter
 		return
 	fi
@@ -898,7 +898,7 @@ auto_pick_strategy() {
 	set_kv Z24K_PRESET auto
 	restart_service
 
-	echo -e "${green}¦à¦Î¦áòÀÚ¦á¦Â¦àT-¦áòÀÚ¦àT¦¦àTÖ¦àTÑ¦á¦Ï ¦àT×¦á¦Â¦àTÑ¦àTØ¦àT¦¦à¦Å¦àT¦¦à¦Å¦àT- ¦àTÑ¦àT¬¦á¦Ï $label.${plain}"
+	echo -e "${green}????????? ????????? ??? $label.${plain}"
 	pause_enter
 }
 
@@ -1049,10 +1049,10 @@ toggle_nfqws2() {
 	cur=$(get_kv NFQWS2_ENABLE)
 	if [ "$cur" = "1" ]; then
 		set_kv NFQWS2_ENABLE 0
-		echo -e "${yellow}NFQWS2 ¦àTÕ¦áòÀÚ¦àTÔ¦àT¬¦á¦Ë¦áòÀá¦àT¦¦à¦Å.${plain}"
+		echo -e "${yellow}NFQWS2 ????????.${plain}"
 	else
 		set_kv NFQWS2_ENABLE 1
-		echo -e "${green}NFQWS2 ¦à¦Æ¦àTÔ¦àT¬¦á¦Ë¦áòÀá¦àT¦¦à¦Å.${plain}"
+		echo -e "${green}NFQWS2 ???????.${plain}"
 	fi
 	restart_service
 	pause_enter
@@ -1203,7 +1203,7 @@ sync_category_lists() {
 		if [ -s "$LISTS_DIR/$file" ]; then
 			continue
 		fi
-	echo -e "${yellow}¦à¦Î¦àT×¦àTÑ¦á¦Ã¦àTÕ¦àTÔ $LISTS_DIR/$file ¦à¦Å¦àT¦ ¦à¦Å¦àT-¦àòÄÖ¦àTÑ¦àT¦¦à¦Å. ¦àòÀİ¦àTÕ¦àTÔ¦àT-¦áòÀá¦àTÔ¦àT- ¦àTÕ¦áòÀÚ¦àTÔ¦àT¬¦á¦Ë¦áòÀá¦àT¦¦à¦Å¦àT-.${plain}"
+	echo -e "${yellow}?????? $LISTS_DIR/$file ?? ??????. ???????? ??? ???????.${plain}"
 	done
 }
 
@@ -1502,14 +1502,14 @@ check_access() {
 		return
 	fi
 	if curl --tls-max 1.2 --max-time 2 -s -o /dev/null "$url"; then
-		echo -e "${green}¦àòÀâ¦á¦Ã¦áòÀÚ¦á¦Ê ¦àTÕ¦áòÀÚ¦à¦Æ¦àT¦¦áòÀÚ ¦àT×¦àTÕ TLS 1.2.${plain}"
+		echo -e "${green}???????? ????? TLS 1.2.${plain}"
 	else
-		echo -e "${yellow}¦àTÜ¦àT¦¦áòÀÚ ¦àTÕ¦áòÀÚ¦à¦Æ¦àT¦¦áòÀÚ¦àT- ¦àT×¦àTÕ TLS 1.2.${plain}"
+		echo -e "${yellow}?????????? ????? TLS 1.2.${plain}"
 	fi
 	if curl --tlsv1.3 --max-time 2 -s -o /dev/null "$url"; then
-		echo -e "${green}¦àòÀâ¦á¦Ã¦áòÀÚ¦á¦Ê ¦àTÕ¦áòÀÚ¦à¦Æ¦àT¦¦áòÀÚ ¦àT×¦àTÕ TLS 1.3.${plain}"
+		echo -e "${green}???????? ????? TLS 1.3.${plain}"
 	else
-		echo -e "${yellow}¦àTÜ¦àT¦¦áòÀÚ ¦àTÕ¦áòÀÚ¦à¦Æ¦àT¦¦áòÀÚ¦àT- ¦àT×¦àTÕ TLS 1.3.${plain}"
+		echo -e "${yellow}?????????? ????? TLS 1.3.${plain}"
 	fi
 }
 
@@ -1582,13 +1582,13 @@ auto_pick_category() {
 	url="$4"
 
 	if ! need_cmd curl; then
-		echo -e "${yellow}curl ¦à¦Å¦àT¦ ¦à¦Å¦àT-¦àòÄÖ¦àTÑ¦àT¦¦à¦Å. ¦àTÒ¦à¦Æ¦áòÀÚ¦àTÕ¦àT×¦àTÕ¦àTÑ¦àT-¦àTÕ¦á¦Â ¦àT×¦á¦Â¦àTÕ¦àT×¦áTÓ¦áòÀ-¦àT¦¦à¦Å ¦àTÑ¦àT¬¦á¦Ï ${label}.${plain}"
+		echo -e "${yellow}curl ?? ??????. ?????????? ???????? ??? ${label}.${plain}"
 		return 1
 	fi
 
 	mkdir -p "$TMP_DIR"
 	if [ ! -s "$CATEGORIES_FILE" ]; then
-		echo -e "${yellow}¦àTä¦àT-¦àòÄÖ¦àT¬ ¦àTÔ¦àT-¦áòÀÚ¦àT¦¦àTÖ¦àTÕ¦á¦Â¦àTÑ¦àòÄÖ ¦à¦Å¦àT¦ ¦à¦Å¦àT-¦àòÄÖ¦àTÑ¦àT¦¦à¦Å. ¦àTÒ¦à¦Æ¦áòÀÚ¦àTÕ¦àT×¦àTÕ¦àTÑ¦àT-¦àTÕ¦á¦Â ¦àT×¦á¦Â¦àTÕ¦àT×¦áTÓ¦áòÀ-¦àT¦¦à¦Å ¦àTÑ¦àT¬¦á¦Ï ${label}.${plain}"
+		echo -e "${yellow}???? ????????? ?? ??????. ?????????? ???????? ??? ${label}.${plain}"
 		return 0
 	fi
 	mode=$(get_category_value "$section" "filter_mode")
@@ -1601,7 +1601,7 @@ auto_pick_category() {
 		*) filter_file="" ;;
 	esac
 	if [ -n "$filter_file" ] && [ ! -s "$LISTS_DIR/$filter_file" ]; then
-		echo -e "${yellow}¦à¦Î¦àT×¦àTÑ¦á¦Ã¦àTÕ¦àTÔ $LISTS_DIR/$filter_file ¦à¦Å¦àT¦ ¦à¦Å¦àT-¦àòÄÖ¦àTÑ¦àT¦¦à¦Å ¦àTÑ¦àT¬¦àTÑ ¦àT×¦áTÓ¦á¦Ã¦áòÀÚ¦àTÕ¦àòÄÖ. ¦àTÒ¦à¦Æ¦áòÀÚ¦àTÕ¦àT×¦àTÕ¦àTÑ¦àT-¦àTÕ¦á¦Â ¦àT×¦á¦Â¦àTÕ¦àT×¦áTÓ¦áòÀ-¦àT¦¦à¦Å ¦àTÑ¦àT¬¦á¦Ï ${label}.${plain}"
+		echo -e "${yellow}?????? $LISTS_DIR/$filter_file ?? ?????? ??? ????. ?????????? ???????? ??? ${label}.${plain}"
 		return 0
 	fi
 
@@ -1611,18 +1611,18 @@ auto_pick_category() {
 		*) ini_file="$STRAT_TCP_FILE" ;;
 	esac
 	if [ ! -s "$ini_file" ]; then
-		echo -e "${yellow}¦àTä¦àT-¦àòÄÖ¦àT¬ ¦á¦Ã¦áòÀÚ¦á¦Â¦àT-¦áòÀÚ¦àT¦¦àTÖ¦àTÑ¦àòÄÖ ¦à¦Å¦àT¦ ¦à¦Å¦àT-¦àòÄÖ¦àTÑ¦àT¦¦à¦Å. ¦àTÒ¦à¦Æ¦áòÀÚ¦àTÕ¦àT×¦àTÕ¦àTÑ¦àT-¦àTÕ¦á¦Â ¦àT×¦á¦Â¦àTÕ¦àT×¦áTÓ¦áòÀ-¦àT¦¦à¦Å ¦àTÑ¦àT¬¦á¦Ï ${label}.${plain}"
+		echo -e "${yellow}???? ????????? ?? ??????. ?????????? ???????? ??? ${label}.${plain}"
 		return 0
 	fi
 	if [ ! -s "$BLOBS_FILE" ]; then
-		echo -e "${yellow}¦àTä¦àT-¦àòÄÖ¦àT¬ blobs ¦à¦Å¦àT¦ ¦à¦Å¦àT-¦àòÄÖ¦àTÑ¦àT¦¦à¦Å. ¦àTà¦àT¦¦àT¬¦áTÓ¦àT¬¦á¦Ê¦áòÀÚ¦àT-¦áòÀÚ¦áòÀ¦ ¦àT-¦à¦Æ¦áòÀÚ¦àTÕ¦àT×¦àTÕ¦àTÑ¦àT-¦àTÕ¦á¦Â¦àT- ¦àTØ¦àTÕ¦àTÖ¦áTÓ¦áòÀÚ ¦àT-¦áòÀ¦¦áòÀÚ¦á¦Ê ¦à¦Å¦àT¦¦àTÔ¦àTÕ¦á¦Â¦á¦Â¦àT¦¦àTÔ¦áòÀÚ¦à¦Å¦áòÀ¦.${plain}"
+		echo -e "${yellow}???? blobs ?? ??????. ?????????? ??????????? ????? ???? ?????????????.${plain}"
 	fi
 
 	tmpfile="$TMP_DIR/z24k-strats-auto.list"
 	list_strategies "$ini_file" > "$tmpfile"
 	count=$(wc -l < "$tmpfile" 2>/dev/null || echo 0)
 	if [ "$count" -le 0 ]; then
-		echo -e "${yellow}¦à¦Î¦àT×¦àTÑ¦á¦Ã¦àTÕ¦àTÔ ¦á¦Ã¦áòÀÚ¦á¦Â¦àT-¦áòÀÚ¦àT¦¦àTÖ¦àTÑ¦àòÄÖ ¦àT×¦áTÓ¦á¦Ã¦áòÀÚ ¦àTÑ¦àT¬¦á¦Ï ${label}.${plain}"
+		echo -e "${yellow}?????? ????????? ???? ??? ${label}.${plain}"
 		return 1
 	fi
 
@@ -1717,38 +1717,38 @@ show_status() {
 		running="running"
 	fi
 
-	echo -e "${cyan}--- ¦à¦Î¦áòÀÚ¦àT-¦áòÀÚ¦áTÓ¦á¦Ã ---${plain}"
-	echo "¦à¦È¦á¦Ã¦áòÀÚ¦àT-¦à¦Å¦àTÕ¦à¦Æ¦àT¬¦àT¦¦à¦Å¦àTÕ: $installed"
-	echo "¦àTß¦á¦Â¦àT¦¦á¦Ã¦àT¦¦áòÀÚ: $preset"
+	echo -e "${cyan}--- ?????? ---${plain}"
+	echo "???????????: $installed"
+	echo "??????: $preset"
 	echo "NFQWS2_ENABLE: $enable"
 	echo "nfqws2: $running"
 }
 
 menu() {
 	safe_clear
-	echo -e "${cyan}--- z24k ¦àTØ¦àT¦¦à¦Å¦á¦Ë ---${plain}"
+	echo -e "${cyan}--- z24k ???? ---${plain}"
 	show_status
 	echo ""
-	menu_item "1" "¦à¦È¦á¦Ã¦áòÀÚ¦àT-¦à¦Å¦àTÕ¦à¦Æ¦àTÔ¦àT-/¦àTÛ¦àT-¦à¦Å¦àTÕ¦à¦Æ¦àT¬¦àT¦¦à¦Å¦àTÑ¦àT¦" ""
-	menu_item "2" "¦à¦È¦àTÑ¦àT-¦àT¬¦àT¦¦à¦Å¦àTÑ¦àT¦" ""
+	menu_item "1" "?????????/??????????" ""
+	menu_item "2" "????????" ""
 	if is_installed; then
-		menu_item "3" "¦à¦Î¦áòÀÚ¦á¦Â¦àT-¦áòÀÚ¦àT¦¦àTÖ¦àTÑ¦á¦Ï: ¦àTÙ¦àT-¦áòÀÚ¦àT¦¦àTÖ¦àTÕ¦á¦Â¦àTÑ¦àTÑ (community)" ""
-		menu_item "4" "¦àTÛ¦àT-¦à¦Å¦àTÕ¦à¦Æ¦àTÑ¦áòÀÚ¦á¦Ê ¦à¦Æ¦á¦Ã¦àT¦ ¦á¦Ã¦àT×¦àTÑ¦á¦Ã¦àTÔ¦àTÑ" ""
-		menu_item "5" "¦àTà¦àT¦¦àTÑ¦àT-¦àTÔ¦áòÀÚ¦àTÑ¦á¦Â¦àTÕ¦à¦Æ¦àT-¦áòÀÚ¦á¦Ê ¦àTÔ¦àT-¦áòÀÚ¦àT¦¦àTÖ¦àTÕ¦á¦Â¦àTÑ¦àTÑ" ""
-		menu_item "6" "¦àTß¦àTÕ¦àTÑ¦àT-¦àTÕ¦á¦Â ¦á¦Ã¦áòÀÚ¦á¦Â¦àT-¦áòÀÚ¦àT¦¦àTÖ¦àTÑ¦àòÄÖ (¦àTÔ¦àT-¦àTÔ magisk)" ""
-		menu_item "7" "¦àòÀÔ¦àT-¦àT×¦áTÓ¦á¦Ã¦áòÀÚ¦àTÑ¦áòÀÚ¦á¦Ê blockcheck2 (¦àTÑ¦à¦Å¦áòÀÚ¦àT¦¦á¦Â¦àT-¦àTÔ¦áòÀÚ¦àTÑ¦à¦Æ¦à¦Å¦àTÕ)" ""
-		menu_item "8" "¦àTŞ¦àT¦¦á¦Ã¦áòÀÚ ¦á¦Ã¦áòÀÚ¦á¦Â¦àT-¦áòÀÚ¦àT¦¦àTÖ¦àTÑ¦àòÄÖ (¦àT-¦à¦Æ¦áòÀÚ¦àTÕ)" ""
-		menu_item "9" "¦àTÛ¦àT-¦à¦Å¦àTÕ¦à¦Æ¦àTÑ¦áòÀÚ¦á¦Ê ¦á¦Ã¦àT×¦àTÑ¦á¦Ã¦àTÕ¦àTÔ RKN" ""
-		menu_item "10" "¦àòÀÙ¦àTÔ¦àT¬/¦àòÀÙ¦áòÀ¦¦àTÔ¦àT¬ NFQWS2" ""
-		menu_item "11" "¦àTß¦àT¦¦á¦Â¦àT¦¦àT¬¦àT-¦àT×¦áTÓ¦á¦Ã¦àTÔ ¦á¦Ã¦àT¦¦á¦Â¦à¦Æ¦àTÑ¦á¦Ã¦àT-" ""
-		menu_item "12" "¦àTß¦àTÕ¦àTÔ¦àT-¦àT¬¦àT-¦áòÀÚ¦á¦Ê ¦á¦Ã¦áòÀÚ¦àT-¦áòÀÚ¦áTÓ¦á¦Ã" ""
-		menu_item "13" "¦àTß¦àTÕ¦àTÔ¦àT-¦àT¬¦àT-¦áòÀÚ¦á¦Ê ¦á¦Ã¦áòÀÚ¦á¦Â¦àT-¦áòÀÚ¦àT¦¦àTÖ¦àTÑ¦àTÑ ¦àTÔ¦àT-¦áòÀÚ¦àT¦¦àTÖ¦àTÕ¦á¦Â¦àTÑ¦àòÄÖ" ""
-		menu_item "14" "¦àTß¦àTÕ¦àTÔ¦àT-¦àT¬¦àT-¦áòÀÚ¦á¦Ê NFQWS2_OPT (¦àTÔ¦àT-¦áòÀÚ¦àT¦¦àTÖ¦àTÕ¦á¦Â¦àTÑ¦àTÑ)" ""
-		menu_item "15" "¦àTà¦àT¦¦àTÑ¦àT-¦àTÔ¦áòÀÚ¦àTÑ¦á¦Â¦àTÕ¦à¦Æ¦àT-¦áòÀÚ¦á¦Ê config" ""
+		menu_item "3" "?????????: ????????? (community)" ""
+		menu_item "4" "??????? ??? ??????" ""
+		menu_item "5" "????????????? ?????????" ""
+		menu_item "6" "?????? ????????? (??? magisk)" ""
+		menu_item "7" "????????? blockcheck2 (????????????)" ""
+		menu_item "8" "???? ????????? (????)" ""
+		menu_item "9" "???????? ?????? RKN" ""
+		menu_item "10" "???/???? NFQWS2" ""
+		menu_item "11" "?????????? ???????" ""
+		menu_item "12" "???????? ??????" ""
+		menu_item "13" "???????? ????????? ?????????" ""
+		menu_item "14" "???????? NFQWS2_OPT (?????????)" ""
+		menu_item "15" "????????????? config" ""
 	fi
-	menu_item "0" "¦àòÀÙ¦áòÀ¦¦áòÀæ¦àTÕ¦àTÑ" ""
+	menu_item "0" "?????" ""
 	echo ""
-	read_tty "¦àòÀÙ¦àT-¦áòÂì ¦à¦Æ¦áòÀ¦¦àT-¦àTÕ¦á¦Â: " ans
+	read_tty "??? ?????: " ans
 
 	case "$ans" in
 		1) do_install ;;
@@ -1772,7 +1772,7 @@ menu() {
 		14) show_category_command && pause_enter ;;
 		15) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
 		0|"") exit 0 ;;
-		*) echo -e "${yellow}¦àTÜ¦àT¦¦à¦Æ¦àT¦¦á¦Â¦à¦Å¦áòÀ¦¦àòÄÖ ¦à¦Æ¦à¦Æ¦àTÕ¦àTÑ.${plain}"; sleep 1 ;;
+		*) echo -e "${yellow}???????? ?????.${plain}"; sleep 1 ;;
 	esac
 
 	menu
