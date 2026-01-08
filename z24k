@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-63"
+SCRIPT_VERSION="2026-01-07-64"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1096,17 +1096,18 @@ ensure_extra_blobs() {
 
 ensure_category_files() {
 	mkdir -p "$INSTALL_DIR"
+	[ "${Z24K_CAT_READY:-0}" -eq 1 ] && return 0
 	log "Downloading categories/strategies/blobs"
 	fetch "$CAT_RAW" "$CATEGORIES_FILE" || true
 	fetch "$TCP_RAW" "$STRAT_TCP_FILE" || true
 	fetch "$UDP_RAW" "$STRAT_UDP_FILE" || true
 	fetch "$STUN_RAW" "$STRAT_STUN_FILE" || true
 	fetch "$BLOBS_RAW" "$BLOBS_FILE" || true
+	Z24K_CAT_READY=1
 }
 
 ensure_blob_files() {
 	local line file
-	ensure_category_files
 	[ -f "$BLOBS_FILE" ] || return 0
 	mkdir -p "$INSTALL_DIR/files/fake"
 	while IFS= read -r line || [ -n "$line" ]; do
@@ -1127,7 +1128,6 @@ ensure_blob_files() {
 
 sync_category_lists() {
 	local line key value tmp current hostlist ipset strategy
-	ensure_category_files
 	mkdir -p "$LISTS_DIR" "$TMP_DIR"
 	tmp="$TMP_DIR/z24k-category-lists.txt"
 	: > "$tmp"
