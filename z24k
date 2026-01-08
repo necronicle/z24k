@@ -724,6 +724,7 @@ auto_pick_strategy() {
 	list_key="$1"
 	list_file="$2"
 	label="$3"
+	url="$4"
 	domain=""
 	tmpdir=$(pick_tmpdir)
 	mkdir -p "$tmpdir"
@@ -1582,7 +1583,15 @@ auto_pick_category() {
 		echo -e "${yellow}Файл blobs не найден. Выполните установку/обновление.${plain}"
 		return 1
 	fi
-	url="$4"
+	if [ -z "$url" ] && [ -n "$filter_file" ]; then
+		url=$(last_nonempty_line_any "$LISTS_DIR/$filter_file")
+		if [ -n "$url" ]; then
+			case "$url" in
+				http://*|https://*) ;;
+				*) url="https://$url" ;;
+			esac
+		fi
+	fi
 
 	if ! need_cmd curl; then
 		echo -e "${yellow}curl не найден. Автоподбор пропущен для ${label}.${plain}"
@@ -1655,12 +1664,12 @@ auto_pick_category() {
 				echo -e "${yellow}HTTP/3 FAIL: ${url}${plain}"
 			fi
 		else
-			if test_tls "$url"; then
-				echo -e "${green}TLS OK: ${url}${plain}"
+			if test_tcp_suite "$url"; then
+				echo -e "${green}TCP OK (TLS1.2/TLS1.3/HTTP2): ${url}${plain}"
 				found=1
 				break
 			else
-				echo -e "${yellow}TLS FAIL: ${url}${plain}"
+				echo -e "${yellow}TCP FAIL (TLS1.2/TLS1.3/HTTP2): ${url}${plain}"
 			fi
 		fi
 	done < "$tmpfile"
@@ -1690,7 +1699,7 @@ auto_pick_all_categories() {
 	echo -e "${cyan}Автоподбор стратегий для категорий...${plain}"
 	auto_pick_category "youtube" "tcp" "YouTube TCP" "https://www.youtube.com/" || true
 	auto_pick_category "youtube_udp" "udp" "YouTube UDP" "https://www.youtube.com/" || true
-	auto_pick_category "googlevideo_tcp" "tcp" "Googlevideo" "https://rr1---sn-jvhnu5g-n8vr.googlevideo.com" || true
+	auto_pick_category "googlevideo_tcp" "tcp" "Googlevideo" "" || true
 	auto_pick_category "rkn" "tcp" "RKN" "https://meduza.io/" || true
 	echo -e "${cyan}Автоподбор завершен.${plain}"
 }
