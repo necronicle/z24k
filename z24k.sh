@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-71"
+SCRIPT_VERSION="2026-01-07-72"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1498,7 +1498,10 @@ pick_strategy_interactive() {
 		idx=$((idx + 1))
 		[ "$idx" -lt "$start" ] && continue
 		set_category_strategy "$section" "$strat"
-		apply_preset "categories" "$(preset_categories)" >/dev/null 2>&1 || true
+		set_kv Z24K_PRESET categories
+		set_opt_block "$(preset_categories)"
+		log "Перезапуск сервиса..."
+		restart_service_timeout || true
 		echo -e "${cyan}Стратегия #${idx}: ${green}${strat}${plain}"
 		check_access "$url"
 		read_tty "1=сохранить, 0=отмена, Enter=следующая: " ans
@@ -1510,7 +1513,9 @@ pick_strategy_interactive() {
 				;;
 			0)
 				[ -n "$prev" ] && set_category_strategy "$section" "$prev"
-				apply_preset "categories" "$(preset_categories)" >/dev/null 2>&1 || true
+				set_kv Z24K_PRESET categories
+				set_opt_block "$(preset_categories)"
+				restart_service_timeout || true
 				echo -e "${yellow}Отмена.${plain}"
 				pause_enter
 				return
@@ -1582,6 +1587,24 @@ show_category_command() {
 	else
 		echo -e "${yellow}Пусто. Категории не собраны.${plain}"
 	fi
+}
+
+restart_service_timeout() {
+	local pid i
+	"$SERVICE" restart >/tmp/z24k-restart.log 2>&1 &
+	pid=$!
+	i=0
+	while kill -0 "$pid" 2>/dev/null; do
+		i=$((i + 1))
+		if [ "$i" -ge 30 ]; then
+			log "Restart timed out. See /tmp/z24k-restart.log"
+			kill "$pid" 2>/dev/null || true
+			return 1
+		fi
+		sleep 1
+	done
+	wait "$pid" 2>/dev/null || true
+	return 0
 }
 
 ensure_rkn_bootstrap_hosts() {
