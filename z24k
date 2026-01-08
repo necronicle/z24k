@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-111"
+SCRIPT_VERSION="2026-01-07-112"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1683,7 +1683,7 @@ auto_pick_category() {
 		set_opt_block "$(preset_categories)"
 		log "Пробую ${label} #${idx}: ${strat}"
 		restart_service_timeout || true
-		echo -e "${cyan}???????? TCP: ${url}${plain}"
+		echo -e "${cyan}Проверка TCP: ${url}${plain}"
 		test_log="$TMP_DIR/z24k-test-tcp.log"
 		: > "$test_log"
 		if test_tcp_suite "$url" >"$test_log" 2>&1; then
@@ -1710,25 +1710,29 @@ auto_pick_category() {
 }
 
 auto_pick_all_categories() {
-		local ylist gvlist
-		ylist="$LISTS_DIR/ipset-youtube.txt"
-		gvlist="$LISTS_DIR/ipset-googlevideo.txt"
-		if ! required_lists_ok; then
-			echo -e "${yellow}Списки не найдены или пустые. Обновите списки и запустите автоподбор снова.${plain}"
-			return 0
-		fi
+	local ylist yqlist gvlist dslist
+	ylist="$LISTS_DIR/russia-youtube.txt"
+	yqlist="$LISTS_DIR/russia-youtubeQ.txt"
+	gvlist="$LISTS_DIR/russia-youtube-rtmps.txt"
+	dslist="$LISTS_DIR/russia-discord.txt"
+	if ! required_lists_ok; then
+		echo -e "${yellow}Списки не найдены или пустые. Обновите списки и запустите автоподбор снова.${plain}"
+		return 0
+	fi
 	echo -e "${cyan}Автоподбор стратегий для категорий...${plain}"
 	auto_pick_category "youtube" "tcp" "YouTube TCP" "https://www.youtube.com/" || true
 	auto_pick_category "youtube_udp" "udp" "YouTube UDP" "https://www.youtube.com/" || true
 	auto_pick_category "googlevideo_tcp" "tcp" "Googlevideo" "" || true
-	auto_pick_category "rkn" "tcp" "RKN" "https://meduza.io/" || true
-	echo -e "${cyan}Автоподбор завершен.${plain}"
+	auto_pick_category "discord_tcp" "tcp" "Discord" "https://discord.com/" || true
+	echo -e "${cyan}Автоподбор завершён.${plain}"
 }
 
 required_lists_ok() {
-	ylist="$LISTS_DIR/ipset-youtube.txt"
-	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
-	[ -s "$ylist" ] && [ -s "$gvlist" ]
+	ylist="$LISTS_DIR/russia-youtube.txt"
+	yqlist="$LISTS_DIR/russia-youtubeQ.txt"
+	gvlist="$LISTS_DIR/russia-youtube-rtmps.txt"
+	dslist="$LISTS_DIR/russia-discord.txt"
+	[ -s "$ylist" ] && [ -s "$yqlist" ] && [ -s "$gvlist" ] && [ -s "$dslist" ]
 }
 
 pick_strategy_interactive() {
@@ -1808,12 +1812,14 @@ magisk_pick_menu() {
 	local domain url
 	while true; do
 		safe_clear
-		echo -e "${cyan}--- Подбор стратегий (как magisk) ---${plain}"
+		echo -e "${cyan}--- Подбор стратегий (как z4r) ---${plain}"
 		echo "1. YouTube UDP (QUIC)"
 		echo "2. YouTube TCP"
 		echo "3. Googlevideo (YT поток)"
-		echo "4. RKN"
-		echo "5. Пользовательский домен"
+		echo "4. Discord"
+		echo "5. Пользовательский список (netrogat)"
+		echo "6. Telegram (CIDR)"
+		echo "7. Пользовательский домен"
 		echo "0. Назад"
 		echo ""
 		read_tty "Ваш выбор: " ans
@@ -1825,15 +1831,17 @@ magisk_pick_menu() {
 				[ -z "$url" ] && url="https://rr1---sn-jvhnu5g-n8vr.googlevideo.com"
 				pick_strategy_interactive "googlevideo_tcp" "tcp" "Googlevideo" "$url"
 				;;
-			4) pick_strategy_interactive "rkn" "tcp" "RKN" "https://meduza.io/" ;;
-			5)
+			4) pick_strategy_interactive "discord_tcp" "tcp" "Discord" "https://discord.com/" ;;
+			5) pick_strategy_interactive "user_tcp" "tcp" "User" "https://netflix.com/" ;;
+			6) pick_strategy_interactive "telegram_tcp" "tcp" "Telegram" "https://telegram.org/" ;;
+			7)
 				read_tty "Домен: " domain
 				[ -z "$domain" ] && continue
 				set_custom_domain "$domain"
 				pick_strategy_interactive "custom" "tcp" "Custom" "https://$domain/"
 				;;
 			0|"") return ;;
-		esac
+			esac
 	done
 }
 
@@ -1846,8 +1854,12 @@ show_category_strategies() {
 	echo "YouTube UDP: ${s:-disabled}"
 	s=$(get_category_value "googlevideo_tcp" "strategy")
 	echo "Googlevideo: ${s:-disabled}"
-	s=$(get_category_value "rkn" "strategy")
-	echo "RKN: ${s:-disabled}"
+	s=$(get_category_value "discord_tcp" "strategy")
+	echo "Discord: ${s:-disabled}"
+	s=$(get_category_value "telegram_tcp" "strategy")
+	echo "Telegram: ${s:-disabled}"
+	s=$(get_category_value "user_tcp" "strategy")
+	echo "User (netrogat): ${s:-disabled}"
 	s=$(get_category_value "custom" "strategy")
 	echo "Custom: ${s:-disabled}"
 }
@@ -1994,10 +2006,10 @@ menu() {
 		menu_item "3" "Стратегия: Категории (community)" ""
 		menu_item "4" "Обновить все списки" ""
 		menu_item "5" "Редактировать категории" ""
-		menu_item "6" "Подбор стратегий (как magisk)" ""
+		menu_item "6" "Подбор стратегий (как z4r)" ""
 		menu_item "7" "Запустить blockcheck2 (интерактивно)" ""
 		menu_item "8" "Тест стратегий (авто)" ""
-		menu_item "9" "Обновить список RKN" ""
+		menu_item "9" "Обновить списки (z4r)" ""
 		menu_item "10" "Вкл/Выкл NFQWS2" ""
 		menu_item "11" "Перезапуск сервиса" ""
 		menu_item "12" "Показать статус" ""
@@ -2018,12 +2030,7 @@ menu() {
 		6) is_installed && magisk_pick_menu ;;
 		7) is_installed && run_blockcheck ;;
 		8) is_installed && test_strategies ;;
-		9)
-			if is_installed; then
-				log "RKN list update is disabled in category mode."
-				pause_enter
-			fi
-			;;
+		9) is_installed && sync_all_lists && pause_enter ;;
 		10) is_installed && toggle_nfqws2 ;;
 		11) is_installed && restart_service && pause_enter ;;
 		12) show_status && pause_enter ;;
