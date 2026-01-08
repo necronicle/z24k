@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-85"
+SCRIPT_VERSION="2026-01-07-86"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1642,7 +1642,6 @@ required_lists_ok() {
 	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
 	[ -s "$ylist" ] && [ -s "$gvlist" ]
 }
-\n
 ensure_autopick_lists() {
 	local ylist gvlist ok
 	ok=1
