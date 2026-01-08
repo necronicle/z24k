@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-08-120"
+SCRIPT_VERSION="2026-01-08-121"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -14,6 +14,7 @@ RKN_RAW="$Z24K_RAW/strategies-tcp-rkn.ini"
 UDP_RAW="$Z24K_RAW/strategies-udp.ini"
 STUN_RAW="$Z24K_RAW/strategies-stun.ini"
 BLOBS_RAW="$Z24K_RAW/blobs.txt"
+FAKES_TARBALL_RAW="https://raw.githubusercontent.com/IndeecFOX/zapret4rocket/z2r/fake_files.tar.gz"
 INSTALL_DIR="/opt/zapret2"
 TMP_DIR="/tmp/zapret2-install"
 LISTS_DIR="$INSTALL_DIR"
@@ -320,6 +321,17 @@ install_release() {
 	mv "$src" "$INSTALL_DIR"
 }
 
+ensure_fake_files_tarball() {
+	[ "${Z24K_NO_FETCH:-0}" = "1" ] && return 0
+	mkdir -p "$INSTALL_DIR/files/fake" "$TMP_DIR"
+	[ -d "$INSTALL_DIR/files/fake" ] || return 0
+	tmp="$TMP_DIR/fake_files.tar.gz"
+	if fetch "$FAKES_TARBALL_RAW" "$tmp"; then
+		tar -xzf "$tmp" -C "$INSTALL_DIR/files/fake" || true
+		rm -f "$tmp"
+	fi
+}
+
 do_install() {
 	if [ ! -d /opt ]; then
 		echo "/opt is required (Entware). Install Entware first." >&2
@@ -347,6 +359,7 @@ do_install() {
 
 	ensure_category_files
 	sync_all_lists
+	ensure_fake_files_tarball
 	ensure_blob_files
 	if ! required_lists_ok; then
 		echo -e "${yellow}Списки не найдены или пустые после обновления. Автоподбор будет пропущен.${plain}"
