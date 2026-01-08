@@ -1701,12 +1701,6 @@ required_lists_ok() {
 	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
 	[ -s "$ylist" ] && [ -s "$gvlist" ]
 }
-	local ylist gvlist ok
-	ok=1
-	ylist="$LISTS_DIR/ipset-youtube.txt"
-	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
-	[ "$ok" -eq 1 ] && required_lists_ok
-}
 
 pick_strategy_interactive() {
 	local section proto label url ini_file tmpfile count idx start strat prev
