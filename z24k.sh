@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-60"
+SCRIPT_VERSION="2026-01-07-61"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1162,6 +1162,9 @@ sync_category_lists() {
 	fi
 	sort -u "$tmp" | while IFS= read -r file; do
 		[ -z "$file" ] && continue
+		if [ -s "$LISTS_DIR/$file" ]; then
+			continue
+		fi
 		fetch "$LISTS_RAW/$file" "$LISTS_DIR/$file" || true
 	done
 }
@@ -1337,6 +1340,166 @@ build_opt_from_categories() {
 	printf "%s" "$opts"
 }
 
+get_category_value() {
+	local section key
+	section="$1"
+	key="$2"
+	awk -v s="$section" -v k="$key" '
+		$0 ~ "^\\["s"\\]$" {in=1; next}
+		in && /^\\[/ {in=0}
+		in && $0 ~ "^"k"=" {sub("^"k"=",""); print; exit}
+	' "$CATEGORIES_FILE" 2>/dev/null
+}
+
+set_category_strategy() {
+	local section value tmpfile
+	section="$1"
+	value="$2"
+	tmpfile="$TMP_DIR/z24k-categories.tmp"
+	awk -v s="$section" -v v="$value" '
+		$0 ~ "^\\["s"\\]$" {in=1; print; next}
+		in && /^\\[/ {in=0}
+		in && /^strategy=/ {print "strategy="v; next}
+		{print}
+	' "$CATEGORIES_FILE" > "$tmpfile" && mv "$tmpfile" "$CATEGORIES_FILE"
+}
+
+list_strategies() {
+	local file
+	file="$1"
+	awk '
+		/^\\[/ {
+			gsub(/\\[/,""); gsub(/\\]/,"");
+			if (length($0) > 0) print $0
+		}
+	' "$file" 2>/dev/null
+}
+
+fetch_category_lists() {
+	local section hostlist ipset file
+	section="$1"
+	hostlist=$(get_category_value "$section" "hostlist")
+	ipset=$(get_category_value "$section" "ipset")
+	for file in "$hostlist" "$ipset"; do
+		[ -z "$file" ] && continue
+		if [ ! -s "$LISTS_DIR/$file" ]; then
+			fetch "$LISTS_RAW/$file" "$LISTS_DIR/$file" || true
+		fi
+	done
+}
+
+set_custom_domain() {
+	local domain
+	domain="$1"
+	mkdir -p "$LISTS_DIR"
+	printf "%s\n" "$domain" > "$LISTS_DIR/zapret-hosts-custom.txt"
+}
+
+check_url_quick() {
+	local url
+	url="$1"
+	if [ -z "$url" ]; then
+		return
+	fi
+	if curl -s --max-time 2 -o /dev/null "$url"; then
+		echo -e "${green}Тест OK: $url${plain}"
+	else
+		echo -e "${yellow}Тест FAIL: $url${plain}"
+	fi
+}
+
+pick_strategy_interactive() {
+	local section proto label url ini_file tmpfile count idx start strat prev
+	section="$1"
+	proto="$2"
+	label="$3"
+	url="$4"
+
+	case "$proto" in
+		udp) ini_file="$STRAT_UDP_FILE" ;;
+		stun) ini_file="$STRAT_STUN_FILE" ;;
+		*) ini_file="$STRAT_TCP_FILE" ;;
+	esac
+
+	tmpfile="$TMP_DIR/z24k-strats.list"
+	list_strategies "$ini_file" > "$tmpfile"
+	count=$(wc -l < "$tmpfile" 2>/dev/null || echo 0)
+	if [ "$count" -le 0 ]; then
+		echo -e "${yellow}Список стратегий пуст.${plain}"
+		pause_enter
+		return
+	fi
+
+	echo -e "${cyan}Подбор стратегии: ${green}$label${plain}"
+	read_tty "Номер стратегии (1-$count, Enter=1): " start
+	[ -z "$start" ] && start=1
+	prev=$(get_category_value "$section" "strategy")
+	idx=0
+
+	ensure_blob_files
+	fetch_category_lists "$section"
+
+	while IFS= read -r strat || [ -n "$strat" ]; do
+		idx=$((idx + 1))
+		[ "$idx" -lt "$start" ] && continue
+		set_category_strategy "$section" "$strat"
+		apply_preset "categories" "$(preset_categories)" >/dev/null 2>&1 || true
+		echo -e "${cyan}Стратегия #${idx}: ${green}${strat}${plain}"
+		check_url_quick "$url"
+		read_tty "1=сохранить, 0=отмена, Enter=следующая: " ans
+		case "$ans" in
+			1)
+				echo -e "${green}Сохранено.${plain}"
+				pause_enter
+				return
+				;;
+			0)
+				[ -n "$prev" ] && set_category_strategy "$section" "$prev"
+				apply_preset "categories" "$(preset_categories)" >/dev/null 2>&1 || true
+				echo -e "${yellow}Отмена.${plain}"
+				pause_enter
+				return
+				;;
+		esac
+	done < "$tmpfile"
+
+	echo -e "${yellow}Стратегии закончились.${plain}"
+	pause_enter
+}
+
+magisk_pick_menu() {
+	local domain url
+	while true; do
+		safe_clear
+		echo -e "${cyan}--- Подбор стратегий (как magisk) ---${plain}"
+		echo "1. YouTube UDP (QUIC)"
+		echo "2. YouTube TCP"
+		echo "3. Googlevideo (YT поток)"
+		echo "4. RKN"
+		echo "5. Пользовательский домен"
+		echo "0. Назад"
+		echo ""
+		read_tty "Ваш выбор: " ans
+		case "$ans" in
+			1) pick_strategy_interactive "youtube_udp" "udp" "YouTube UDP" "https://www.youtube.com/" ;;
+			2) pick_strategy_interactive "youtube" "tcp" "YouTube TCP" "https://www.youtube.com/" ;;
+			3)
+				read_tty "URL для проверки (Enter=googlevideo.com): " url
+				[ -z "$url" ] && url="https://googlevideo.com/"
+				pick_strategy_interactive "googlevideo_tcp" "tcp" "Googlevideo" "$url"
+				;;
+			4) pick_strategy_interactive "rkn" "tcp" "RKN" "https://meduza.io/" ;;
+			5)
+				read_tty "Домен: " domain
+				[ -z "$domain" ] && continue
+				set_custom_domain "$domain"
+				pick_strategy_interactive "custom" "tcp" "Custom" "https://$domain/"
+				;;
+			0|"") return ;;
+		esac
+	done
+}
+
 ensure_rkn_bootstrap_hosts() {
 	local f
 	f="$INSTALL_DIR/ipset/zapret-hosts-user.txt"
@@ -1447,16 +1610,14 @@ menu() {
 		menu_item "3" "Стратегия: Категории (community)" ""
 		menu_item "4" "Обновить все списки" ""
 		menu_item "5" "Редактировать категории" ""
-		menu_item "6" "Автоподбор стратегии: YouTube" ""
-		menu_item "7" "Автоподбор стратегии: Discord" ""
-		menu_item "8" "Автоподбор стратегии: RKN" ""
-		menu_item "9" "Запустить blockcheck2 (интерактивно)" ""
-		menu_item "10" "Тест стратегий (авто)" ""
-		menu_item "11" "Обновить список RKN" ""
-		menu_item "12" "Вкл/Выкл NFQWS2" ""
-		menu_item "13" "Перезапуск сервиса" ""
-		menu_item "14" "Показать статус" ""
-		menu_item "15" "Редактировать config" ""
+		menu_item "6" "Подбор стратегий (как magisk)" ""
+		menu_item "7" "Запустить blockcheck2 (интерактивно)" ""
+		menu_item "8" "Тест стратегий (авто)" ""
+		menu_item "9" "Обновить список RKN" ""
+		menu_item "10" "Вкл/Выкл NFQWS2" ""
+		menu_item "11" "Перезапуск сервиса" ""
+		menu_item "12" "Показать статус" ""
+		menu_item "13" "Редактировать config" ""
 	fi
 	menu_item "0" "Выход" ""
 	echo ""
@@ -1468,12 +1629,10 @@ menu() {
 		3) is_installed && apply_preset "categories" "$(preset_categories)" ;;
 		4) is_installed && sync_category_lists && pause_enter ;;
 		5) is_installed && ensure_category_files && ${EDITOR:-vi} "$CATEGORIES_FILE" ;;
-		6) is_installed && auto_pick_strategy "yt" "$INSTALL_DIR/ipset/zapret-hosts-youtube.txt" "YouTube" ;;
-		7) is_installed && auto_pick_strategy "ds" "$INSTALL_DIR/ipset/zapret-hosts-discord.txt" "Discord" ;;
-		8) is_installed && auto_pick_strategy "rkn" "$INSTALL_DIR/ipset/zapret-hosts.txt" "RKN" ;;
-		9) is_installed && run_blockcheck ;;
-		10) is_installed && test_strategies ;;
-		11)
+		6) is_installed && magisk_pick_menu ;;
+		7) is_installed && run_blockcheck ;;
+		8) is_installed && test_strategies ;;
+		9)
 			if is_installed; then
 				set_mode_hostlist
 				ensure_rkn_bootstrap_hosts
@@ -1485,10 +1644,10 @@ menu() {
 				pause_enter
 			fi
 			;;
-		12) is_installed && toggle_nfqws2 ;;
-		13) is_installed && restart_service && pause_enter ;;
-		14) show_status && pause_enter ;;
-		15) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
+		10) is_installed && toggle_nfqws2 ;;
+		11) is_installed && restart_service && pause_enter ;;
+		12) show_status && pause_enter ;;
+		13) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
 		0|"") exit 0 ;;
 		*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
 	esac
