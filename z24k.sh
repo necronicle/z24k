@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-97"
+SCRIPT_VERSION="2026-01-07-99"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1691,11 +1691,14 @@ auto_pick_category() {
 			fi
 		else
 			echo -e "${cyan}Проверка TCP: ${url}${plain}"
-			if test_tcp_suite "$url"; then
+			test_log="$TMP_DIR/z24k-test-tcp.log"
+			: > "$test_log"
+			if test_tcp_suite "$url" >"$test_log" 2>&1; then
+				cat "$test_log"
 				found=1
 				break
 			else
-				echo -e "${yellow}TCP тесты не прошли.${plain}"
+				cat "$test_log"
 			fi
 		fi
 	done < "$tmpfile"
