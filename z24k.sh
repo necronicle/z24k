@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-61"
+SCRIPT_VERSION="2026-01-07-62"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1096,6 +1096,7 @@ ensure_extra_blobs() {
 
 ensure_category_files() {
 	mkdir -p "$INSTALL_DIR"
+	log "Downloading categories/strategies/blobs"
 	fetch "$CAT_RAW" "$CATEGORIES_FILE" || true
 	fetch "$TCP_RAW" "$STRAT_TCP_FILE" || true
 	fetch "$UDP_RAW" "$STRAT_UDP_FILE" || true
@@ -1116,6 +1117,7 @@ ensure_blob_files() {
 				file=${line##*@bin/}
 				[ -z "$file" ] && continue
 				if [ ! -s "$INSTALL_DIR/files/fake/$file" ]; then
+					log "Downloading blob: $file"
 					fetch "$Z24K_RAW/files/fake/$file" "$INSTALL_DIR/files/fake/$file" || true
 				fi
 				;;
@@ -1165,6 +1167,7 @@ sync_category_lists() {
 		if [ -s "$LISTS_DIR/$file" ]; then
 			continue
 		fi
+		log "Downloading list: $file"
 		fetch "$LISTS_RAW/$file" "$LISTS_DIR/$file" || true
 	done
 }
@@ -1395,16 +1398,21 @@ set_custom_domain() {
 	printf "%s\n" "$domain" > "$LISTS_DIR/zapret-hosts-custom.txt"
 }
 
-check_url_quick() {
+check_access() {
 	local url
 	url="$1"
 	if [ -z "$url" ]; then
 		return
 	fi
-	if curl -s --max-time 2 -o /dev/null "$url"; then
-		echo -e "${green}Тест OK: $url${plain}"
+	if curl --tls-max 1.2 --max-time 2 -s -o /dev/null "$url"; then
+		echo -e "${green}Есть ответ по TLS 1.2.${plain}"
 	else
-		echo -e "${yellow}Тест FAIL: $url${plain}"
+		echo -e "${yellow}Нет ответа по TLS 1.2.${plain}"
+	fi
+	if curl --tlsv1.3 --max-time 2 -s -o /dev/null "$url"; then
+		echo -e "${green}Есть ответ по TLS 1.3.${plain}"
+	else
+		echo -e "${yellow}Нет ответа по TLS 1.3.${plain}"
 	fi
 }
 
@@ -1445,7 +1453,7 @@ pick_strategy_interactive() {
 		set_category_strategy "$section" "$strat"
 		apply_preset "categories" "$(preset_categories)" >/dev/null 2>&1 || true
 		echo -e "${cyan}Стратегия #${idx}: ${green}${strat}${plain}"
-		check_url_quick "$url"
+		check_access "$url"
 		read_tty "1=сохранить, 0=отмена, Enter=следующая: " ans
 		case "$ans" in
 			1)
