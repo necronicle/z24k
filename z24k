@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-67"
+SCRIPT_VERSION="2026-01-07-68"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1369,7 +1369,16 @@ list_strategies() {
 	local file
 	file="$1"
 	[ -f "$file" ] || return 0
-	grep '^\\[' "$file" 2>/dev/null | tr -d '[]\r' || true
+	while IFS= read -r line || [ -n "$line" ]; do
+		line=$(printf "%s" "$line" | tr -d '\r')
+		case "$line" in
+			\[*\])
+				line=${line#\[}
+				line=${line%\]}
+				[ -n "$line" ] && printf "%s\n" "$line"
+				;;
+		esac
+	done < "$file"
 }
 
 fetch_category_lists() {
