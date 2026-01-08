@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-101"
+SCRIPT_VERSION="2026-01-07-102"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1618,6 +1618,7 @@ auto_pick_category() {
 	mode=$(get_category_value "$section" "filter_mode")
 	hostlist=$(get_category_value "$section" "hostlist")
 	ipset=$(get_category_value "$section" "ipset")
+	test_url=$(get_category_value "$section" "test_url")
 	filter_file=""
 	case "$mode" in
 		ipset) filter_file="$ipset" ;;
@@ -1628,7 +1629,8 @@ auto_pick_category() {
 		echo -e "${yellow}Список $LISTS_DIR/$filter_file не найден или пустой. Автоподбор пропущен для ${label}.${plain}"
 		return 0
 	fi
-	if [ -z "$url" ] && [ -n "$filter_file" ]; then
+	[ -z "$url" ] && [ -n "$test_url" ] && url="$test_url"
+	if [ -z "$url" ] && [ "$mode" = "hostlist" ] && [ -n "$filter_file" ]; then
 		url=$(last_nonempty_line_any "$LISTS_DIR/$filter_file")
 		if [ -n "$url" ]; then
 			case "$url" in
@@ -1636,6 +1638,10 @@ auto_pick_category() {
 				*) url="https://$url" ;;
 			esac
 		fi
+	fi
+	if [ -z "$url" ]; then
+		echo -e "${yellow}Не задан тестовый URL для ${label}. Автоподбор пропущен.${plain}"
+		return 0
 	fi
 
 	case "$proto" in
