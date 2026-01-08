@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-65"
+SCRIPT_VERSION="2026-01-07-66"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1342,11 +1342,12 @@ get_category_value() {
 	local section key
 	section="$1"
 	key="$2"
+	[ -f "$CATEGORIES_FILE" ] || return 0
 	awk -v s="$section" -v k="$key" '
 		$0 ~ "^\\["s"\\]$" {in=1; next}
 		in && /^\\[/ {in=0}
 		in && $0 ~ "^"k"=" {sub("^"k"=",""); print; exit}
-	' "$CATEGORIES_FILE" 2>/dev/null
+	' "$CATEGORIES_FILE" 2>/dev/null || true
 }
 
 set_category_strategy() {
@@ -1355,6 +1356,7 @@ set_category_strategy() {
 	value="$2"
 	tmpfile="$TMP_DIR/z24k-categories.tmp"
 	mkdir -p "$TMP_DIR"
+	[ -f "$CATEGORIES_FILE" ] || return 0
 	awk -v s="$section" -v v="$value" '
 		$0 ~ "^\\["s"\\]$" {in=1; print; next}
 		in && /^\\[/ {in=0}
@@ -1366,12 +1368,13 @@ set_category_strategy() {
 list_strategies() {
 	local file
 	file="$1"
+	[ -f "$file" ] || return 0
 	awk '
 		/^\\[/ {
 			gsub(/\\[/,""); gsub(/\\]/,"");
 			if (length($0) > 0) print $0
 		}
-	' "$file" 2>/dev/null
+	' "$file" 2>/dev/null || true
 }
 
 fetch_category_lists() {
@@ -1419,6 +1422,7 @@ pick_strategy_interactive() {
 	label="$3"
 	url="$4"
 	mkdir -p "$TMP_DIR"
+	ensure_category_files
 
 	case "$proto" in
 		udp) ini_file="$STRAT_UDP_FILE" ;;
