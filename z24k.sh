@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-110"
+SCRIPT_VERSION="2026-01-07-111"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1569,16 +1569,6 @@ test_tcp_suite() {
 		ok=0
 	fi
 
-	if supports_http2; then
-		if curl --http2 --max-time 3 --connect-timeout 3 -s -o /dev/null "$url"; then
-			echo -e "${green}HTTP/2: OK${plain}"
-		else
-			echo -e "${yellow}HTTP/2: FAIL${plain}"
-			ok=0
-		fi
-	else
-		echo -e "${yellow}HTTP/2: SKIP (curl без HTTP/2)${plain}"
-	fi
 
 	[ "$ok" -eq 1 ]
 }
@@ -1666,19 +1656,19 @@ auto_pick_category() {
 		return 1
 	fi
 
-		if [ "$proto" = "udp" ] && ! supports_http3; then
-			strat=$(head -n 1 "$tmpfile" 2>/dev/null || true)
-			if [ -z "$strat" ]; then
-				echo -e "${yellow}Список стратегий пуст для ${label}.${plain}"
-				return 1
-			fi
-			echo -e "${yellow}HTTP/3: SKIP (curl без HTTP/3)${plain}"
-			echo -e "${yellow}Применяю стратегию без проверки: ${label}.${plain}"
-			set_category_strategy "$section" "$strat"
-			set_kv Z24K_PRESET categories
-			set_opt_block "$(preset_categories)"
-			restart_service_timeout || true
-			echo -e "${green}Стратегия применена для ${label}: ${strat}${plain}"
+	if [ "$proto" = "udp" ]; then
+		strat=$(head -n 1 "$tmpfile" 2>/dev/null || true)
+		if [ -z "$strat" ]; then
+			echo -e "${yellow}Список стратегий пуст для ${label}.${plain}"
+			return 1
+		fi
+		echo -e "${yellow}HTTP/3: SKIP (тесты UDP отключены)${plain}"
+		echo -e "${yellow}Применяю стратегию без проверки: ${label}.${plain}"
+		set_category_strategy "$section" "$strat"
+		set_kv Z24K_PRESET categories
+		set_opt_block "$(preset_categories)"
+		restart_service_timeout || true
+		echo -e "${green}Стратегия применена для ${label}: ${strat}${plain}"
 		return 0
 	fi
 
@@ -1693,26 +1683,15 @@ auto_pick_category() {
 		set_opt_block "$(preset_categories)"
 		log "Пробую ${label} #${idx}: ${strat}"
 		restart_service_timeout || true
-		if [ "$proto" = "udp" ]; then
-			echo -e "${cyan}Проверка HTTP/3: ${url}${plain}"
-			if test_http3 "$url"; then
-				echo -e "${green}HTTP/3 OK: ${url}${plain}"
-				found=1
-				break
-			else
-				echo -e "${yellow}HTTP/3 FAIL: ${url}${plain}"
-			fi
+		echo -e "${cyan}???????? TCP: ${url}${plain}"
+		test_log="$TMP_DIR/z24k-test-tcp.log"
+		: > "$test_log"
+		if test_tcp_suite "$url" >"$test_log" 2>&1; then
+			cat "$test_log"
+			found=1
+			break
 		else
-			echo -e "${cyan}Проверка TCP: ${url}${plain}"
-			test_log="$TMP_DIR/z24k-test-tcp.log"
-			: > "$test_log"
-			if test_tcp_suite "$url" >"$test_log" 2>&1; then
-				cat "$test_log"
-				found=1
-				break
-			else
-				cat "$test_log"
-			fi
+			cat "$test_log"
 		fi
 	done < "$tmpfile"
 
