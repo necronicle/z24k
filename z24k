@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-93"
+SCRIPT_VERSION="2026-01-07-94"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1521,6 +1521,13 @@ supports_http3() {
 	curl -V 2>/dev/null | grep -qi http3
 }
 
+supports_http2() {
+	if ! need_cmd curl; then
+		return 1
+	fi
+	curl -V 2>/dev/null | grep -qi http2
+}
+
 test_tls() {
 	local url
 	url="$1"
@@ -1533,22 +1540,40 @@ test_tls() {
 
 test_tcp_suite() {
 	local url
+	local ok
 	url="$1"
 	if [ -z "$url" ]; then
 		return 1
 	fi
-	if ! curl --tls-max 1.2 --http1.1 --max-time 3 --connect-timeout 3 -s -o /dev/null "$url"; then
-		return 1
+	ok=1
+
+	if curl --tls-max 1.2 --http1.1 --max-time 3 --connect-timeout 3 -s -o /dev/null "$url"; then
+		echo -e "${green}TLS 1.2 (HTTP/1.1): OK${plain}"
+	else
+		echo -e "${yellow}TLS 1.2 (HTTP/1.1): FAIL${plain}"
+		ok=0
 	fi
-	if ! curl --tlsv1.3 --http1.1 --max-time 3 --connect-timeout 3 -s -o /dev/null "$url"; then
-		return 1
+
+	if curl --tlsv1.3 --http1.1 --max-time 3 --connect-timeout 3 -s -o /dev/null "$url"; then
+		echo -e "${green}TLS 1.3 (HTTP/1.1): OK${plain}"
+	else
+		echo -e "${yellow}TLS 1.3 (HTTP/1.1): FAIL${plain}"
+		ok=0
 	fi
-	if curl -V 2>/dev/null | grep -qi http2; then
-		if ! curl --http2 --max-time 3 --connect-timeout 3 -s -o /dev/null "$url"; then
-			return 1
+
+	if supports_http2; then
+		if curl --http2 --max-time 3 --connect-timeout 3 -s -o /dev/null "$url"; then
+			echo -e "${green}HTTP/2: OK${plain}"
+		else
+			echo -e "${yellow}HTTP/2: FAIL${plain}"
+			ok=0
 		fi
+	else
+		echo -e "${yellow}HTTP/2: FAIL (curl без HTTP/2)${plain}"
+		ok=0
 	fi
-	return 0
+
+	[ "$ok" -eq 1 ]
 }
 
 test_http3() {
