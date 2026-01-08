@@ -1696,7 +1696,6 @@ auto_pick_all_categories() {
 }
 
 required_lists_ok() {
-	local ylist gvlist
 	ylist="$LISTS_DIR/ipset-youtube.txt"
 	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
 	[ -s "$ylist" ] && [ -s "$gvlist" ]
