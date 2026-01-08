@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-87"
+SCRIPT_VERSION="2026-01-07-89"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1543,7 +1543,6 @@ auto_pick_category() {
 	mkdir -p "$TMP_DIR"
 	ensure_category_files
 	ensure_blob_files
-	fetch_category_lists "$section"
 	mode=$(get_category_value "$section" "filter_mode")
 	hostlist=$(get_category_value "$section" "hostlist")
 	ipset=$(get_category_value "$section" "ipset")
