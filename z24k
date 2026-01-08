@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-69"
+SCRIPT_VERSION="2026-01-07-70"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1555,6 +1555,21 @@ magisk_pick_menu() {
 	done
 }
 
+show_category_strategies() {
+	local s
+	echo -e "${cyan}--- Стратегии категорий ---${plain}"
+	s=$(get_category_value "youtube" "strategy")
+	echo "YouTube TCP: ${s:-disabled}"
+	s=$(get_category_value "youtube_udp" "strategy")
+	echo "YouTube UDP: ${s:-disabled}"
+	s=$(get_category_value "googlevideo_tcp" "strategy")
+	echo "Googlevideo: ${s:-disabled}"
+	s=$(get_category_value "rkn" "strategy")
+	echo "RKN: ${s:-disabled}"
+	s=$(get_category_value "custom" "strategy")
+	echo "Custom: ${s:-disabled}"
+}
+
 ensure_rkn_bootstrap_hosts() {
 	local f
 	f="$INSTALL_DIR/ipset/zapret-hosts-user.txt"
@@ -1672,7 +1687,8 @@ menu() {
 		menu_item "10" "Вкл/Выкл NFQWS2" ""
 		menu_item "11" "Перезапуск сервиса" ""
 		menu_item "12" "Показать статус" ""
-		menu_item "13" "Редактировать config" ""
+		menu_item "13" "Показать стратегии категорий" ""
+		menu_item "14" "Редактировать config" ""
 	fi
 	menu_item "0" "Выход" ""
 	echo ""
@@ -1696,7 +1712,8 @@ menu() {
 		10) is_installed && toggle_nfqws2 ;;
 		11) is_installed && restart_service && pause_enter ;;
 		12) show_status && pause_enter ;;
-		13) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
+		13) show_category_strategies && pause_enter ;;
+		14) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
 		0|"") exit 0 ;;
 		*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
 	esac
