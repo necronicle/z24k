@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-76"
+SCRIPT_VERSION="2026-01-07-77"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1425,16 +1425,28 @@ list_strategies() {
 }
 
 fetch_category_lists() {
-	local section hostlist ipset file
+	local section hostlist ipset mode
 	section="$1"
 	hostlist=$(get_category_value "$section" "hostlist")
 	ipset=$(get_category_value "$section" "ipset")
-	for file in "$hostlist" "$ipset"; do
-		[ -z "$file" ] && continue
-		if [ ! -s "$LISTS_DIR/$file" ]; then
-			fetch "$LISTS_RAW/$file" "$LISTS_DIR/$file" || true
-		fi
-	done
+	mode=$(get_category_value "$section" "filter_mode")
+	case "$mode" in
+		ipset)
+			[ -n "$ipset" ] && fetch "$LISTS_RAW/$ipset" "$LISTS_DIR/$ipset" || true
+			;;
+		hostlist)
+			[ -n "$hostlist" ] && fetch "$LISTS_RAW/$hostlist" "$LISTS_DIR/$hostlist" || true
+			;;
+		none)
+			;;
+		*)
+			if [ -n "$ipset" ]; then
+				fetch "$LISTS_RAW/$ipset" "$LISTS_DIR/$ipset" || true
+			elif [ -n "$hostlist" ]; then
+				fetch "$LISTS_RAW/$hostlist" "$LISTS_DIR/$hostlist" || true
+			fi
+			;;
+	esac
 }
 
 set_custom_domain() {
