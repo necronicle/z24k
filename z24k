@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-78"
+SCRIPT_VERSION="2026-01-07-79"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -329,6 +329,9 @@ do_install() {
 	ensure_category_files
 	sync_category_lists
 	ensure_blob_files
+	if ! required_lists_ok; then
+		echo -e "${yellow}Списки не найдены или пустые после обновления. Автоподбор будет пропущен.${plain}"
+	fi
 
 	if [ "$HAD_CONFIG" -eq 0 ]; then
 		sed -i 's/^NFQWS2_ENABLE=0/NFQWS2_ENABLE=1/' "$CONFIG"
@@ -342,7 +345,9 @@ do_install() {
 	fi
 
 	"$SERVICE" restart
-	auto_pick_all_categories
+	if required_lists_ok; then
+		auto_pick_all_categories
+	fi
 	log "Install complete."
 	pause_enter
 	return 0
@@ -1588,6 +1593,13 @@ auto_pick_all_categories() {
 	auto_pick_category "googlevideo_tcp" "tcp" "Googlevideo" "https://rr1---sn-jvhnu5g-n8vr.googlevideo.com" || true
 	auto_pick_category "rkn" "tcp" "RKN" "https://meduza.io/" || true
 	echo -e "${cyan}Автоподбор завершен.${plain}"
+}
+
+required_lists_ok() {
+	local ylist gvlist
+	ylist="$LISTS_DIR/ipset-youtube.txt"
+	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
+	[ -s "$ylist" ] && [ -s "$gvlist" ]
 }
 
 pick_strategy_interactive() {
