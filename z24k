@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-99"
+SCRIPT_VERSION="2026-01-07-100"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1589,6 +1589,7 @@ auto_pick_category() {
 	section="$1"
 	proto="$2"
 	label="$3"
+	url="$4"
 
 	if [ ! -s "$CATEGORIES_FILE" ]; then
 		echo -e "${yellow}Файл категорий не найден. Выполните установку/обновление.${plain}"
@@ -1606,15 +1607,6 @@ auto_pick_category() {
 	if [ ! -s "$BLOBS_FILE" ]; then
 		echo -e "${yellow}Файл blobs не найден. Выполните установку/обновление.${plain}"
 		return 1
-	fi
-	if [ -z "$url" ] && [ -n "$filter_file" ]; then
-		url=$(last_nonempty_line_any "$LISTS_DIR/$filter_file")
-		if [ -n "$url" ]; then
-			case "$url" in
-				http://*|https://*) ;;
-				*) url="https://$url" ;;
-			esac
-		fi
 	fi
 
 	if ! need_cmd curl; then
@@ -1637,6 +1629,15 @@ auto_pick_category() {
 	if [ -n "$filter_file" ] && [ ! -s "$LISTS_DIR/$filter_file" ]; then
 		echo -e "${yellow}Список $LISTS_DIR/$filter_file не найден или пустой. Автоподбор пропущен для ${label}.${plain}"
 		return 0
+	fi
+	if [ -z "$url" ] && [ -n "$filter_file" ]; then
+		url=$(last_nonempty_line_any "$LISTS_DIR/$filter_file")
+		if [ -n "$url" ]; then
+			case "$url" in
+				http://*|https://*) ;;
+				*) url="https://$url" ;;
+			esac
+		fi
 	fi
 
 	case "$proto" in
