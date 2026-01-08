@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-112"
+SCRIPT_VERSION="2026-01-07-113"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1145,7 +1145,6 @@ ensure_blob_files() {
 				if [ ! -s "$INSTALL_DIR/files/fake/$file" ]; then
 					blob_url="$Z24K_RAW/files/fake/$file"
 					log "Downloading blob: $file"
-					log "Blob URL: $blob_url"
 					fetch "$blob_url" "$INSTALL_DIR/files/fake/$file" || true
 				fi
 				;;
