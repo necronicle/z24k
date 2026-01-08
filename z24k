@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-84"
+SCRIPT_VERSION="2026-01-07-85"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1589,13 +1589,19 @@ auto_pick_category() {
 		restart_service_timeout || true
 		if [ "$proto" = "udp" ]; then
 			if test_http3 "$url"; then
+				echo -e "${green}HTTP/3 OK: ${url}${plain}"
 				found=1
 				break
+			else
+				echo -e "${yellow}HTTP/3 FAIL: ${url}${plain}"
 			fi
 		else
 			if test_tls "$url"; then
+				echo -e "${green}TLS OK: ${url}${plain}"
 				found=1
 				break
+			else
+				echo -e "${yellow}TLS FAIL: ${url}${plain}"
 			fi
 		fi
 	done < "$tmpfile"
