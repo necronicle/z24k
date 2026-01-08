@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-100"
+SCRIPT_VERSION="2026-01-07-101"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1615,8 +1615,6 @@ auto_pick_category() {
 	fi
 
 	mkdir -p "$TMP_DIR"
-	ensure_category_files
-	ensure_blob_files
 	mode=$(get_category_value "$section" "filter_mode")
 	hostlist=$(get_category_value "$section" "hostlist")
 	ipset=$(get_category_value "$section" "ipset")
@@ -1751,6 +1749,11 @@ pick_strategy_interactive() {
 		pause_enter
 		return
 	fi
+	if [ ! -s "$BLOBS_FILE" ]; then
+		echo -e "${yellow}Файл blobs не найден. Выполните установку/обновление.${plain}"
+		pause_enter
+		return
+	fi
 	url="$4"
 	mkdir -p "$TMP_DIR"
 
@@ -1774,8 +1777,6 @@ pick_strategy_interactive() {
 	[ -z "$start" ] && start=1
 	prev=$(get_category_value "$section" "strategy")
 	idx=0
-
-	ensure_blob_files
 
 	while IFS= read -r strat || [ -n "$strat" ]; do
 		idx=$((idx + 1))
