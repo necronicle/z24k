@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-94"
+SCRIPT_VERSION="2026-01-07-95"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1690,11 +1690,8 @@ auto_pick_category() {
 			fi
 		else
 			if test_tcp_suite "$url"; then
-				echo -e "${green}TCP OK (TLS1.2/TLS1.3/HTTP2): ${url}${plain}"
 				found=1
 				break
-			else
-				echo -e "${yellow}TCP FAIL (TLS1.2/TLS1.3/HTTP2): ${url}${plain}"
 			fi
 		fi
 	done < "$tmpfile"
