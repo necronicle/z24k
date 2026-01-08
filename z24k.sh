@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-72"
+SCRIPT_VERSION="2026-01-07-75"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -342,6 +342,7 @@ do_install() {
 	fi
 
 	"$SERVICE" restart
+	auto_pick_all_categories
 	log "Install complete."
 	pause_enter
 	return 0
@@ -1461,6 +1462,115 @@ check_access() {
 	fi
 }
 
+supports_http3() {
+	if ! need_cmd curl; then
+		return 1
+	fi
+	curl -V 2>/dev/null | grep -qi http3
+}
+
+test_tls() {
+	local url
+	url="$1"
+	if [ -z "$url" ]; then
+		return 1
+	fi
+	curl --tls-max 1.2 --max-time 3 --connect-timeout 3 -s -o /dev/null "$url" && return 0
+	curl --tlsv1.3 --max-time 3 --connect-timeout 3 -s -o /dev/null "$url"
+}
+
+test_http3() {
+	local url
+	url="$1"
+	if [ -z "$url" ]; then
+		return 1
+	fi
+	curl --http3-only --max-time 3 --connect-timeout 3 -s -o /dev/null "$url"
+}
+
+auto_pick_category() {
+	local section proto label url ini_file tmpfile count idx strat prev found
+	section="$1"
+	proto="$2"
+	label="$3"
+	url="$4"
+
+	if ! need_cmd curl; then
+		echo -e "${yellow}curl не найден. Автоподбор пропущен для ${label}.${plain}"
+		return 1
+	fi
+
+	mkdir -p "$TMP_DIR"
+	ensure_category_files
+	ensure_blob_files
+	fetch_category_lists "$section"
+
+	case "$proto" in
+		udp) ini_file="$STRAT_UDP_FILE" ;;
+		stun) ini_file="$STRAT_STUN_FILE" ;;
+		*) ini_file="$STRAT_TCP_FILE" ;;
+	esac
+
+	tmpfile="$TMP_DIR/z24k-strats-auto.list"
+	list_strategies "$ini_file" > "$tmpfile"
+	count=$(wc -l < "$tmpfile" 2>/dev/null || echo 0)
+	if [ "$count" -le 0 ]; then
+		echo -e "${yellow}Список стратегий пуст для ${label}.${plain}"
+		return 1
+	fi
+
+	if [ "$proto" = "udp" ] && ! supports_http3; then
+		echo -e "${yellow}curl без HTTP/3. Пропускаю автоподбор для ${label}.${plain}"
+		return 1
+	fi
+
+	prev=$(get_category_value "$section" "strategy")
+	found=0
+	idx=0
+	echo -e "${cyan}Автоподбор стратегии: ${green}${label}${plain}"
+	while IFS= read -r strat || [ -n "$strat" ]; do
+		idx=$((idx + 1))
+		set_category_strategy "$section" "$strat"
+		set_kv Z24K_PRESET categories
+		set_opt_block "$(preset_categories)"
+		log "Пробую ${label} #${idx}: ${strat}"
+		restart_service_timeout || true
+		if [ "$proto" = "udp" ]; then
+			if test_http3 "$url"; then
+				found=1
+				break
+			fi
+		else
+			if test_tls "$url"; then
+				found=1
+				break
+			fi
+		fi
+	done < "$tmpfile"
+
+	if [ "$found" -eq 1 ]; then
+		echo -e "${green}Найдена стратегия для ${label}: ${strat}${plain}"
+		return 0
+	fi
+
+	prev="${prev:-disabled}"
+	set_category_strategy "$section" "$prev"
+	set_kv Z24K_PRESET categories
+	set_opt_block "$(preset_categories)"
+	restart_service_timeout || true
+	echo -e "${yellow}Стратегия для ${label} не найдена.${plain}"
+	return 1
+}
+
+auto_pick_all_categories() {
+	echo -e "${cyan}Автоподбор стратегий для категорий...${plain}"
+	auto_pick_category "youtube" "tcp" "YouTube TCP" "https://www.youtube.com/"
+	auto_pick_category "youtube_udp" "udp" "YouTube UDP" "https://www.youtube.com/"
+	auto_pick_category "googlevideo_tcp" "tcp" "Googlevideo" "https://rr1---sn-jvhnu5g-n8vr.googlevideo.com"
+	auto_pick_category "rkn" "tcp" "RKN" "https://meduza.io/"
+	echo -e "${cyan}Автоподбор завершен.${plain}"
+}
+
 pick_strategy_interactive() {
 	local section proto label url ini_file tmpfile count idx start strat prev
 	section="$1"
@@ -1544,8 +1654,8 @@ magisk_pick_menu() {
 			1) pick_strategy_interactive "youtube_udp" "udp" "YouTube UDP" "https://www.youtube.com/" ;;
 			2) pick_strategy_interactive "youtube" "tcp" "YouTube TCP" "https://www.youtube.com/" ;;
 			3)
-				read_tty "URL для проверки (Enter=googlevideo.com): " url
-				[ -z "$url" ] && url="https://googlevideo.com/"
+				read_tty "URL для проверки (Enter=rr1---sn-jvhnu5g-n8vr.googlevideo.com): " url
+				[ -z "$url" ] && url="https://rr1---sn-jvhnu5g-n8vr.googlevideo.com"
 				pick_strategy_interactive "googlevideo_tcp" "tcp" "Googlevideo" "$url"
 				;;
 			4) pick_strategy_interactive "rkn" "tcp" "RKN" "https://meduza.io/" ;;
