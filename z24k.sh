@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-95"
+SCRIPT_VERSION="2026-01-07-96"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1681,6 +1681,7 @@ auto_pick_category() {
 		log "Пробую ${label} #${idx}: ${strat}"
 		restart_service_timeout || true
 		if [ "$proto" = "udp" ]; then
+			echo -e "${cyan}Проверка HTTP/3: ${url}${plain}"
 			if test_http3 "$url"; then
 				echo -e "${green}HTTP/3 OK: ${url}${plain}"
 				found=1
@@ -1689,9 +1690,12 @@ auto_pick_category() {
 				echo -e "${yellow}HTTP/3 FAIL: ${url}${plain}"
 			fi
 		else
+			echo -e "${cyan}Проверка TCP: ${url}${plain}"
 			if test_tcp_suite "$url"; then
 				found=1
 				break
+			else
+				echo -e "${yellow}TCP тесты не прошли.${plain}"
 			fi
 		fi
 	done < "$tmpfile"
