@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-102"
+SCRIPT_VERSION="2026-01-07-103"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1116,6 +1116,7 @@ ensure_extra_blobs() {
 
 ensure_category_files() {
 	mkdir -p "$INSTALL_DIR"
+	[ "${Z24K_NO_FETCH:-0}" = "1" ] && return 0
 	[ "${Z24K_CAT_READY:-0}" -eq 1 ] && return 0
 	log "Downloading categories/strategies/blobs"
 	fetch "$CAT_RAW" "$CATEGORIES_FILE" || true
@@ -1127,6 +1128,7 @@ ensure_category_files() {
 }
 
 ensure_blob_files() {
+	[ "${Z24K_NO_FETCH:-0}" = "1" ] && return 0
 	local line file
 	[ -f "$BLOBS_FILE" ] || return 0
 	mkdir -p "$INSTALL_DIR/files/fake"
@@ -1413,6 +1415,7 @@ set_category_strategy() {
 	value="$2"
 	tmpfile="$TMP_DIR/z24k-categories.tmp"
 	mkdir -p "$TMP_DIR"
+	Z24K_NO_FETCH=1
 	[ -f "$CATEGORIES_FILE" ] || return 0
 	in_section=0
 	replaced=0
