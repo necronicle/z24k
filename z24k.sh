@@ -1,13 +1,13 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-08-118"
+SCRIPT_VERSION="2026-01-08-120"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
 Z24K_RAW="https://raw.githubusercontent.com/$Z24K_REPO/master"
 KEENETIC_RAW="$Z24K_RAW/keenetic"
-LISTS_RAW="$Z24K_RAW/lists"
+LISTS_RAW="$Z24K_RAW"
 CAT_RAW="$Z24K_RAW/categories.ini"
 TCP_RAW="$Z24K_RAW/strategies-tcp.ini"
 RKN_RAW="$Z24K_RAW/strategies-tcp-rkn.ini"
@@ -16,7 +16,7 @@ STUN_RAW="$Z24K_RAW/strategies-stun.ini"
 BLOBS_RAW="$Z24K_RAW/blobs.txt"
 INSTALL_DIR="/opt/zapret2"
 TMP_DIR="/tmp/zapret2-install"
-LISTS_DIR="$INSTALL_DIR/ipset"
+LISTS_DIR="$INSTALL_DIR"
 PKT_OUT=10
 
 CONFIG="$INSTALL_DIR/config"
@@ -1167,13 +1167,14 @@ sync_all_lists() {
 	local tmp file
 	mkdir -p "$LISTS_DIR" "$TMP_DIR"
 	tmp="$TMP_DIR/z24k-lists-index.txt"
-	fetch "$LISTS_RAW/index.txt?nocache=$(date +%s)" "$tmp" || return 0
+	fetch "$LISTS_RAW/lists/index.txt?nocache=$(date +%s)" "$tmp" || return 0
 	while IFS= read -r file || [ -n "$file" ]; do
 		file=$(printf "%s" "$file" | tr -d '\r')
 		[ -z "$file" ] && continue
 		if [ -s "$LISTS_DIR/$file" ]; then
 			continue
 		fi
+		mkdir -p "$(dirname "$LISTS_DIR/$file")"
 		log "Downloading list: $file"
 		fetch "$LISTS_RAW/$file?nocache=$(date +%s)" "$LISTS_DIR/$file" || true
 	done < "$tmp"
@@ -1724,10 +1725,10 @@ auto_pick_category() {
 
 auto_pick_all_categories() {
 	local ylist yqlist gvlist rknlist
-	ylist="$LISTS_DIR/russia-youtube.txt"
-	yqlist="$LISTS_DIR/russia-youtubeQ.txt"
-	gvlist="$LISTS_DIR/russia-youtube-rtmps.txt"
-	rknlist="$LISTS_DIR/List.txt"
+	ylist="$LISTS_DIR/lists/russia-youtube.txt"
+	yqlist="$LISTS_DIR/lists/russia-youtubeQ.txt"
+	gvlist="$LISTS_DIR/lists/russia-youtube-rtmps.txt"
+	rknlist="$LISTS_DIR/extra_strats/TCP_RKN_list.txt"
 	if ! required_lists_ok; then
 		echo -e "${yellow}Списки не найдены или пустые. Обновите списки и запустите автоподбор снова.${plain}"
 		return 0
@@ -1741,10 +1742,10 @@ auto_pick_all_categories() {
 }
 
 required_lists_ok() {
-	ylist="$LISTS_DIR/russia-youtube.txt"
-	yqlist="$LISTS_DIR/russia-youtubeQ.txt"
-	gvlist="$LISTS_DIR/russia-youtube-rtmps.txt"
-	rknlist="$LISTS_DIR/List.txt"
+	ylist="$LISTS_DIR/lists/russia-youtube.txt"
+	yqlist="$LISTS_DIR/lists/russia-youtubeQ.txt"
+	gvlist="$LISTS_DIR/lists/russia-youtube-rtmps.txt"
+	rknlist="$LISTS_DIR/extra_strats/TCP_RKN_list.txt"
 	[ -s "$ylist" ] && [ -s "$yqlist" ] && [ -s "$gvlist" ] && [ -s "$rknlist" ]
 }
 
