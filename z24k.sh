@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-106"
+SCRIPT_VERSION="2026-01-07-107"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -116,7 +116,11 @@ get_latest_ver() {
 	ver=""
 
 	if need_cmd curl; then
-		ver=$(curl -fsSL "$api" | sed -n 's/.*"tag_name": *"v\([0-9.]*\)".*/\1/p' | head -n1)
+		json=$(curl -fsSL "$api" 2>/dev/null) || {
+			log "Version check failed: $api"
+			json=""
+		}
+		ver=$(printf "%s" "$json" | sed -n 's/.*"tag_name": *"v\([0-9.]*\)".*/\1/p' | head -n1)
 	elif need_cmd wget; then
 		ver=$(wget -qO- "$api" | sed -n 's/.*"tag_name": *"v\([0-9.]*\)".*/\1/p' | head -n1)
 	fi
