@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-66"
+SCRIPT_VERSION="2026-01-07-67"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1369,12 +1369,7 @@ list_strategies() {
 	local file
 	file="$1"
 	[ -f "$file" ] || return 0
-	awk '
-		/^\\[/ {
-			gsub(/\\[/,""); gsub(/\\]/,"");
-			if (length($0) > 0) print $0
-		}
-	' "$file" 2>/dev/null || true
+	grep '^\\[' "$file" 2>/dev/null | tr -d '[]\r' || true
 }
 
 fetch_category_lists() {
