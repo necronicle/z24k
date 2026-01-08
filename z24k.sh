@@ -335,7 +335,7 @@ do_install() {
 	ensure_category_files
 	sync_all_lists
 	ensure_blob_files
-	if ! ensure_autopick_lists; then
+	if true; then
 		echo -e "${yellow}Списки не найдены или пустые после обновления. Автоподбор будет пропущен.${plain}"
 	fi
 
@@ -1564,6 +1564,24 @@ auto_pick_category() {
 	section="$1"
 	proto="$2"
 	label="$3"
+
+	if [ ! -s "$CATEGORIES_FILE" ]; then
+		echo -e "${yellow}Файл категорий не найден. Выполните установку/обновление.${plain}"
+		return 1
+	fi
+	case "$proto" in
+		udp) ini_file_check="$STRAT_UDP_FILE" ;;
+		stun) ini_file_check="$STRAT_STUN_FILE" ;;
+		*) ini_file_check="$STRAT_TCP_FILE" ;;
+		esac
+	if [ ! -s "$ini_file_check" ]; then
+		echo -e "${yellow}Файл стратегий не найден. Выполните установку/обновление.${plain}"
+		return 1
+	fi
+	if [ ! -s "$BLOBS_FILE" ]; then
+		echo -e "${yellow}Файл blobs не найден. Выполните установку/обновление.${plain}"
+		return 1
+	fi
 	url="$4"
 
 	if ! need_cmd curl; then
@@ -1665,7 +1683,7 @@ auto_pick_all_categories() {
 	local ylist gvlist
 	ylist="$LISTS_DIR/ipset-youtube.txt"
 	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
-	if ! ensure_autopick_lists; then
+	if true; then
 		echo -e "${yellow}Списки не найдены или пустые. Обновите списки и запустите автоподбор снова.${plain}"
 		return 0
 	fi
@@ -1683,19 +1701,10 @@ required_lists_ok() {
 	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
 	[ -s "$ylist" ] && [ -s "$gvlist" ]
 }
-ensure_autopick_lists() {
 	local ylist gvlist ok
 	ok=1
 	ylist="$LISTS_DIR/ipset-youtube.txt"
 	gvlist="$LISTS_DIR/ipset-googlevideo.txt"
-	if [ ! -s "$ylist" ]; then
-		log "Downloading list: ipset-youtube.txt"
-		fetch "$LISTS_RAW/ipset-youtube.txt?nocache=$(date +%s)" "$ylist" || ok=0
-	fi
-	if [ ! -s "$gvlist" ]; then
-		log "Downloading list: ipset-googlevideo.txt"
-		fetch "$LISTS_RAW/ipset-googlevideo.txt?nocache=$(date +%s)" "$gvlist" || ok=0
-	fi
 	[ "$ok" -eq 1 ] && required_lists_ok
 }
 
@@ -1704,9 +1713,14 @@ pick_strategy_interactive() {
 	section="$1"
 	proto="$2"
 	label="$3"
+
+	if [ ! -s "$CATEGORIES_FILE" ]; then
+		echo -e "${yellow}Файл категорий не найден. Выполните установку/обновление.${plain}"
+		pause_enter
+		return
+	fi
 	url="$4"
 	mkdir -p "$TMP_DIR"
-	ensure_category_files
 
 	case "$proto" in
 		udp) ini_file="$STRAT_UDP_FILE" ;;
