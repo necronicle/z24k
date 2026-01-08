@@ -1,9 +1,5 @@
-autohostlist.txt
-cloudflare-ipset.txt
-cloudflare-ipset_v6.txt
-netrogat.txt
+List.txt
 russia-discord.txt
 russia-youtube-rtmps.txt
 russia-youtube.txt
 russia-youtubeQ.txt
-tg_cidr.txt

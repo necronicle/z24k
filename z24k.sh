@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-07-115"
+SCRIPT_VERSION="2026-01-08-116"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -10,6 +10,7 @@ KEENETIC_RAW="$Z24K_RAW/keenetic"
 LISTS_RAW="$Z24K_RAW/lists"
 CAT_RAW="$Z24K_RAW/categories.ini"
 TCP_RAW="$Z24K_RAW/strategies-tcp.ini"
+RKN_RAW="$Z24K_RAW/strategies-tcp-rkn.ini"
 UDP_RAW="$Z24K_RAW/strategies-udp.ini"
 STUN_RAW="$Z24K_RAW/strategies-stun.ini"
 BLOBS_RAW="$Z24K_RAW/blobs.txt"
@@ -23,6 +24,7 @@ CONFIG_DEFAULT="$INSTALL_DIR/config.default"
 SERVICE="$INSTALL_DIR/init.d/sysv/zapret2"
 CATEGORIES_FILE="$INSTALL_DIR/z24k-categories.ini"
 STRAT_TCP_FILE="$INSTALL_DIR/z24k-strategies-tcp.ini"
+STRAT_RKN_FILE="$INSTALL_DIR/z24k-strategies-tcp-rkn.ini"
 STRAT_UDP_FILE="$INSTALL_DIR/z24k-strategies-udp.ini"
 STRAT_STUN_FILE="$INSTALL_DIR/z24k-strategies-stun.ini"
 BLOBS_FILE="$INSTALL_DIR/z24k-blobs.txt"
@@ -1124,6 +1126,7 @@ ensure_category_files() {
 	log "Downloading categories/strategies/blobs"
 	fetch "$CAT_RAW" "$CATEGORIES_FILE" || true
 	fetch "$TCP_RAW" "$STRAT_TCP_FILE" || true
+	fetch "$RKN_RAW" "$STRAT_RKN_FILE" || true
 	fetch "$UDP_RAW" "$STRAT_UDP_FILE" || true
 	fetch "$STUN_RAW" "$STRAT_STUN_FILE" || true
 	fetch "$BLOBS_RAW" "$BLOBS_FILE" || true
@@ -1596,7 +1599,8 @@ auto_pick_category() {
 		udp) ini_file_check="$STRAT_UDP_FILE" ;;
 		stun) ini_file_check="$STRAT_STUN_FILE" ;;
 		*) ini_file_check="$STRAT_TCP_FILE" ;;
-		esac
+	esac
+	[ "$section" = "rkn" ] && ini_file_check="$STRAT_RKN_FILE"
 	if [ ! -s "$ini_file_check" ]; then
 		echo -e "${yellow}Файл стратегий не найден. Выполните установку/обновление.${plain}"
 		return 1
@@ -1646,6 +1650,8 @@ auto_pick_category() {
 		stun) ini_file="$STRAT_STUN_FILE" ;;
 		*) ini_file="$STRAT_TCP_FILE" ;;
 	esac
+	[ "$section" = "rkn" ] && ini_file="$STRAT_RKN_FILE"
+	[ "$section" = "rkn" ] && ini_file="$STRAT_RKN_FILE"
 
 	tmpfile="$TMP_DIR/z24k-strats-auto.list"
 	list_strategies "$ini_file" > "$tmpfile"
@@ -1709,11 +1715,11 @@ auto_pick_category() {
 }
 
 auto_pick_all_categories() {
-	local ylist yqlist gvlist dslist
+	local ylist yqlist gvlist rknlist
 	ylist="$LISTS_DIR/russia-youtube.txt"
 	yqlist="$LISTS_DIR/russia-youtubeQ.txt"
 	gvlist="$LISTS_DIR/russia-youtube-rtmps.txt"
-	dslist="$LISTS_DIR/russia-discord.txt"
+	rknlist="$LISTS_DIR/List.txt"
 	if ! required_lists_ok; then
 		echo -e "${yellow}Списки не найдены или пустые. Обновите списки и запустите автоподбор снова.${plain}"
 		return 0
@@ -1722,7 +1728,7 @@ auto_pick_all_categories() {
 	auto_pick_category "youtube" "tcp" "YouTube TCP" "https://www.youtube.com/" || true
 	auto_pick_category "youtube_udp" "udp" "YouTube UDP" "https://www.youtube.com/" || true
 	auto_pick_category "googlevideo_tcp" "tcp" "Googlevideo" "" || true
-	auto_pick_category "discord_tcp" "tcp" "Discord" "https://discord.com/" || true
+	auto_pick_category "rkn" "tcp" "RKN" "https://rutracker.org/" || true
 	echo -e "${cyan}Автоподбор завершён.${plain}"
 }
 
@@ -1730,8 +1736,8 @@ required_lists_ok() {
 	ylist="$LISTS_DIR/russia-youtube.txt"
 	yqlist="$LISTS_DIR/russia-youtubeQ.txt"
 	gvlist="$LISTS_DIR/russia-youtube-rtmps.txt"
-	dslist="$LISTS_DIR/russia-discord.txt"
-	[ -s "$ylist" ] && [ -s "$yqlist" ] && [ -s "$gvlist" ] && [ -s "$dslist" ]
+	rknlist="$LISTS_DIR/List.txt"
+	[ -s "$ylist" ] && [ -s "$yqlist" ] && [ -s "$gvlist" ] && [ -s "$rknlist" ]
 }
 
 pick_strategy_interactive() {
@@ -1808,37 +1814,26 @@ pick_strategy_interactive() {
 }
 
 magisk_pick_menu() {
-	local domain url
+	local url
 	while true; do
 		safe_clear
-		echo -e "${cyan}--- Подбор стратегий (как z4r) ---${plain}"
+		echo -e "${cyan}--- Strategy Picker (z4r) ---${plain}"
 		echo "1. YouTube UDP (QUIC)"
 		echo "2. YouTube TCP"
-		echo "3. Googlevideo (YT поток)"
-		echo "4. Discord"
-		echo "5. Пользовательский список (netrogat)"
-		echo "6. Telegram (CIDR)"
-		echo "7. Пользовательский домен"
-		echo "0. Назад"
+		echo "3. Googlevideo (YT stream)"
+		echo "4. RKN"
+		echo "0. Exit"
 		echo ""
-		read_tty "Ваш выбор: " ans
+		read_tty "Select: " ans
 		case "$ans" in
 			1) pick_strategy_interactive "youtube_udp" "udp" "YouTube UDP" "https://www.youtube.com/" ;;
 			2) pick_strategy_interactive "youtube" "tcp" "YouTube TCP" "https://www.youtube.com/" ;;
 			3)
-				read_tty "URL для проверки (Enter=rr1---sn-jvhnu5g-n8vr.googlevideo.com): " url
+				read_tty "URL (Enter=rr1---sn-jvhnu5g-n8vr.googlevideo.com): " url
 				[ -z "$url" ] && url="https://rr1---sn-jvhnu5g-n8vr.googlevideo.com"
 				pick_strategy_interactive "googlevideo_tcp" "tcp" "Googlevideo" "$url"
 				;;
-			4) pick_strategy_interactive "discord_tcp" "tcp" "Discord" "https://discord.com/" ;;
-			5) pick_strategy_interactive "user_tcp" "tcp" "User" "https://netflix.com/" ;;
-			6) pick_strategy_interactive "telegram_tcp" "tcp" "Telegram" "https://telegram.org/" ;;
-			7)
-				read_tty "Домен: " domain
-				[ -z "$domain" ] && continue
-				set_custom_domain "$domain"
-				pick_strategy_interactive "custom" "tcp" "Custom" "https://$domain/"
-				;;
+			4) pick_strategy_interactive "rkn" "tcp" "RKN" "https://rutracker.org/" ;;
 			0|"") return ;;
 			esac
 	done
@@ -1855,12 +1850,8 @@ show_category_strategies() {
 	echo "Googlevideo: ${s:-disabled}"
 	s=$(get_category_value "discord_tcp" "strategy")
 	echo "Discord: ${s:-disabled}"
-	s=$(get_category_value "telegram_tcp" "strategy")
-	echo "Telegram: ${s:-disabled}"
-	s=$(get_category_value "user_tcp" "strategy")
-	echo "User (netrogat): ${s:-disabled}"
-	s=$(get_category_value "custom" "strategy")
-	echo "Custom: ${s:-disabled}"
+	s=$(get_category_value "rkn" "strategy")
+	echo "RKN: ${s:-disabled}"
 }
 
 show_category_command() {
@@ -2045,3 +2036,4 @@ menu() {
 
 log "Menu version $SCRIPT_VERSION"
 menu
+
