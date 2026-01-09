@@ -1408,7 +1408,7 @@ build_category_opts_raw() {
 			[ -n "$block" ] || return 1
 			base="--filter-udp=443"
 			[ -n "$filter_opts" ] && base="$base $filter_opts"
-			base="$base --in-range=-s5556 --lua-desync=circular --in-range=x"
+			base="$base --in-range=-s5556 --in-range=x"
 			echo "$block" | grep -q -- '--payload=' || base="$base --payload=quic_initial"
 			printf "%s\n%s" "$base" "$block"
 			;;
@@ -1417,7 +1417,7 @@ build_category_opts_raw() {
 			[ -n "$block" ] || return 1
 			base="--qnum 300 --filter-tcp=80,443,2053,2083,2087,2096,8443"
 			[ -n "$filter_opts" ] && base="$base $filter_opts"
-			base="$base --in-range=-s5556 --lua-desync=circular --in-range=x"
+			base="$base --in-range=-s5556 --in-range=x"
 			echo "$block" | grep -q -- '--payload=' || base="$base --payload=tls_client_hello,http_req,http_reply"
 			printf "%s\n%s" "$base" "$block"
 			;;
