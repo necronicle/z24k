@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-08-124"
+SCRIPT_VERSION="2026-01-08-125"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -1406,7 +1406,8 @@ build_category_opts_raw() {
 			[ -n "$block" ] || return 1
 			base="--filter-udp=443"
 			[ -n "$filter_opts" ] && base="$base $filter_opts"
-			base="$base --in-range=-s5556 --lua-desync=circular --in-range=x --payload=quic_initial"
+			base="$base --in-range=-s5556 --lua-desync=circular --in-range=x"
+			echo "$block" | grep -q -- '--payload=' || base="$base --payload=quic_initial"
 			printf "%s\n%s" "$base" "$block"
 			;;
 		tcp|*)
@@ -1414,7 +1415,8 @@ build_category_opts_raw() {
 			[ -n "$block" ] || return 1
 			base="--qnum 300 --filter-tcp=80,443,2053,2083,2087,2096,8443"
 			[ -n "$filter_opts" ] && base="$base $filter_opts"
-			base="$base --in-range=-s5556 --lua-desync=circular --in-range=x --payload=tls_client_hello,http_req,http_reply"
+			base="$base --in-range=-s5556 --lua-desync=circular --in-range=x"
+			echo "$block" | grep -q -- '--payload=' || base="$base --payload=tls_client_hello,http_req,http_reply"
 			printf "%s\n%s" "$base" "$block"
 			;;
 	esac

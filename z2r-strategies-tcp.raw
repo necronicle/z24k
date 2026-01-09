@@ -1,114 +1,887 @@
 ##STRAT s1
---lua-desync=multidisorder:pos=1,midsld
+--payload=http_req --lua-desync=http_methodeol
 ##END
 
 ##STRAT s2
---lua-desync=fake:blob=maxru:tls_mod=none:repeats=6:tcp_ts_up
+--lua-desync=syndata --payload=http_req --lua-desync=multisplit
 ##END
 
 ##STRAT s3
---lua-desync=fake:blob=google_www:repeats=6:tcp_ts_up:tcp_ack_inc=10000000
+--lua-desync=syndata --payload=http_req --lua-desync=multidisorder
 ##END
 
 ##STRAT s4
---lua-desync=fake:blob=google_www:tls_mod=none:repeats=6:tcp_ts_up:tcp_ack_inc=2
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_ttl=2:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
 ##END
 
 ##STRAT s5
---lua-desync=fake:blob=google_www:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_ts_up:tcp_ack_inc=2
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_ttl=2:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
 ##END
 
 ##STRAT s6
---lua-desync=fake:blob=0x00000000:tcp_flags_set=SYN:repeats=1 --lua-desync=multidisorder:pos=method+2,midsld
+--payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5:repeats=1 --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
 ##END
 
 ##STRAT s7
---lua-desync=fake:blob=google_www:repeats=6:tcp_ts_up:tcp_ack_inc=1000
---lua-desync=fakedsplit:pos=1:nofake1
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_md5:repeats=1 --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
 ##END
 
 ##STRAT s8
---lua-desync=fake:blob=google_www:repeats=6:tcp_ts_up:tcp_ack_inc=1000
---lua-desync=fakedsplit:pos=1:nofake1
+--payload=http_req --lua-desync=fake:blob=fake_default_http:badsum:repeats=1
 ##END
 
 ##STRAT s9
---lua-desync=fake:blob=google_www:repeats=6:tcp_ts_up
---lua-desync=fakedsplit:pattern=0x00
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_ack=-66000:tcp_ts_up:repeats=1
 ##END
 
 ##STRAT s10
---lua-desync=fake:blob=google_www:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_ts_up:tcp_ack_inc=2
---lua-desync=fakedsplit:pos=1
+--payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_ts=-1000:repeats=1
 ##END
 
 ##STRAT s11
---lua-desync=fake:blob=google_www:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_ts_up
---lua-desync=fakedsplit:pos=1:nofake1:seqovl=681:seqovl_pattern=google_www
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_ts=-1000:repeats=1
 ##END
 
 ##STRAT s12
---lua-desync=fake:blob=google_www:tls_mod=rnd,dupsid,sni=www.google.com:repeats=11:tcp_ts_up
---lua-desync=multidisorder:pos=1,midsld
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_flags_unset=ACK:repeats=1
 ##END
 
 ##STRAT s13
---lua-desync=fake:blob=maxru:repeats=8:tcp_ts_up
---lua-desync=multisplit:pos=1:seqovl=654:seqovl_pattern=maxru
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-1,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
 ##END
 
 ##STRAT s14
---lua-desync=hostfakesplit:midhost=host-2:host_mod=host=rzd.ru:seqovl=726:tcp_ack=-66000:tcp_ack_inc=0
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-1,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
 ##END
 
 ##STRAT s15
---lua-desync=fake:blob=0x00000000:tcp_ack=-66000:tcp_ts_up:repeats=1 --lua-desync=fakeddisorder:pos=method+2,midsld:tcp_ack=-66000:tcp_ts_up:repeats=1
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-2,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
 ##END
 
 ##STRAT s16
---lua-desync=fake:blob=maxru:tls_mod=rnd,dupsid,sni=fonts.google.com:tcp_md5:ip_autottl=-1,2-12
---lua-desync=fakedsplit:pos=7,sld+1:nofake1
---lua-desync=multidisorder:pos=1
---lua-desync=pktmod:tcp_ack=-66000:tcp_ts_up
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-2,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
 ##END
 
 ##STRAT s17
---lua-desync=fake:blob=maxru:tcp_seq=1000000:repeats=1
---lua-desync=multisplit:pos=2
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-3,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
 ##END
 
 ##STRAT s18
---lua-desync=fake:blob=maxru:tcp_ts=-1000:repeats=1
---lua-desync=multisplit:pos=2
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-3,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
 ##END
 
 ##STRAT s19
---lua-desync=fake:blob=maxru:tcp_flags_unset=ACK:tls_mod=rnd,dupsid,padencap:repeats=1
---lua-desync=fakeddisorder:pos=2:tcp_flags_unset=ACK
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-4,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
 ##END
 
 ##STRAT s20
---lua-desync=http_methodeol
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-4,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
 ##END
 
 ##STRAT s21
---lua-desync=wssize:wsize=1:scale=6
---lua-desync=multidisorder:pos=2
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-5,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
 ##END
 
 ##STRAT s22
---lua-desync=syndata
---lua-desync=multidisorder
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-5,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
 ##END
 
 ##STRAT s23
---lua-desync=fake:blob=fake_default_http:tcp_ts=-1000:repeats=1 --lua-desync=multidisorder:pos=method+2
+--payload=http_req --lua-desync=fakedsplit:pos=method+2:ip_ttl=2:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
 ##END
 
 ##STRAT s24
---lua-desync=fakedsplit:pos=method+2,midsld:tcp_ack=-66000:tcp_ts_up
+--payload=http_req --lua-desync=fakedsplit:pos=midsld:ip_ttl=2:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
 ##END
 
 ##STRAT s25
---lua-desync=fake:blob=fake_default_tls:tcp_seq=1000000:repeats=1 --lua-desync=multidisorder:pos=1,midsld
+--payload=http_req --lua-desync=fakedsplit:pos=method+2,midsld:ip_ttl=2:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s26
+--payload=http_req --lua-desync=fakedsplit:pos=method+2:tcp_md5:repeats=1 --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
+##END
+
+##STRAT s27
+--payload=http_req --lua-desync=fakedsplit:pos=midsld:tcp_md5:repeats=1 --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
+##END
+
+##STRAT s28
+--payload=http_req --lua-desync=fakedsplit:pos=method+2,midsld:tcp_md5:repeats=1 --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
+##END
+
+##STRAT s29
+--payload=http_req --lua-desync=fakedsplit:pos=method+2:tcp_ack=-66000:tcp_ts_up
+##END
+
+##STRAT s30
+--payload=http_req --lua-desync=fakedsplit:pos=midsld:tcp_ack=-66000:tcp_ts_up
+##END
+
+##STRAT s31
+--payload=http_req --lua-desync=fakedsplit:pos=method+2,midsld:tcp_ack=-66000:tcp_ts_up
+##END
+
+##STRAT s32
+--payload=http_req --lua-desync=fakedsplit:pos=method+2:tcp_ts=-1000
+##END
+
+##STRAT s33
+--payload=http_req --lua-desync=fakedsplit:pos=midsld:tcp_ts=-1000
+##END
+
+##STRAT s34
+--payload=http_req --lua-desync=fakedsplit:pos=method+2,midsld:tcp_ts=-1000
+##END
+
+##STRAT s35
+--payload=http_req --lua-desync=fakedsplit:pos=method+2:tcp_flags_unset=ACK
+##END
+
+##STRAT s36
+--payload=http_req --lua-desync=fakedsplit:pos=midsld:tcp_flags_unset=ACK
+##END
+
+##STRAT s37
+--payload=http_req --lua-desync=fakedsplit:pos=method+2,midsld:tcp_flags_unset=ACK
+##END
+
+##STRAT s38
+--payload=http_req --lua-desync=fakedsplit:pos=method+2:tcp_flags_set=SYN
+##END
+
+##STRAT s39
+--payload=http_req --lua-desync=fakedsplit:pos=midsld:tcp_flags_set=SYN
+##END
+
+##STRAT s40
+--payload=http_req --lua-desync=fakedsplit:pos=method+2,midsld:tcp_flags_set=SYN
+##END
+
+##STRAT s41
+--payload=http_req --lua-desync=fakedsplit:pos=method+2:ip_autottl=-1,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s42
+--payload=http_req --lua-desync=fakedsplit:pos=midsld:ip_autottl=-1,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s43
+--payload=http_req --lua-desync=fakedsplit:pos=method+2,midsld:ip_autottl=-1,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s44
+--payload=http_req --lua-desync=fakedsplit:pos=method+2:ip_autottl=-2,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s45
+--payload=http_req --lua-desync=fakedsplit:pos=midsld:ip_autottl=-2,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s46
+--payload=http_req --lua-desync=fakedsplit:pos=method+2,midsld:ip_autottl=-2,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s47
+--payload=http_req --lua-desync=fakedsplit:pos=method+2:ip_autottl=-3,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s48
+--payload=http_req --lua-desync=fakedsplit:pos=midsld:ip_autottl=-3,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s49
+--payload=http_req --lua-desync=fakedsplit:pos=method+2,midsld:ip_autottl=-3,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s50
+--payload=http_req --lua-desync=fakedsplit:pos=method+2:ip_autottl=-4,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s51
+--payload=http_req --lua-desync=fakedsplit:pos=midsld:ip_autottl=-4,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s52
+--payload=http_req --lua-desync=fakedsplit:pos=method+2,midsld:ip_autottl=-4,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s53
+--payload=http_req --lua-desync=fakedsplit:pos=method+2:ip_autottl=-5,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s54
+--payload=http_req --lua-desync=fakedsplit:pos=midsld:ip_autottl=-5,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s55
+--payload=http_req --lua-desync=fakedsplit:pos=method+2,midsld:ip_autottl=-5,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s56
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2:ip_ttl=2:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s57
+--payload=http_req --lua-desync=fakeddisorder:pos=midsld:ip_ttl=2:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s58
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2,midsld:ip_ttl=2:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s59
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2:tcp_md5:repeats=1 --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
+##END
+
+##STRAT s60
+--payload=http_req --lua-desync=fakeddisorder:pos=midsld:tcp_md5:repeats=1 --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
+##END
+
+##STRAT s61
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2,midsld:tcp_md5:repeats=1 --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
+##END
+
+##STRAT s62
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2:tcp_ack=-66000:tcp_ts_up
+##END
+
+##STRAT s63
+--payload=http_req --lua-desync=fakeddisorder:pos=midsld:tcp_ack=-66000:tcp_ts_up
+##END
+
+##STRAT s64
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2,midsld:tcp_ack=-66000:tcp_ts_up
+##END
+
+##STRAT s65
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2:tcp_ts=-1000
+##END
+
+##STRAT s66
+--payload=http_req --lua-desync=fakeddisorder:pos=midsld:tcp_ts=-1000
+##END
+
+##STRAT s67
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2,midsld:tcp_ts=-1000
+##END
+
+##STRAT s68
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2:tcp_flags_unset=ACK
+##END
+
+##STRAT s69
+--payload=http_req --lua-desync=fakeddisorder:pos=midsld:tcp_flags_unset=ACK
+##END
+
+##STRAT s70
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2,midsld:tcp_flags_unset=ACK
+##END
+
+##STRAT s71
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2:tcp_flags_set=SYN
+##END
+
+##STRAT s72
+--payload=http_req --lua-desync=fakeddisorder:pos=midsld:tcp_flags_set=SYN
+##END
+
+##STRAT s73
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2,midsld:tcp_flags_set=SYN
+##END
+
+##STRAT s74
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2:ip_autottl=-1,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s75
+--payload=http_req --lua-desync=fakeddisorder:pos=midsld:ip_autottl=-1,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s76
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2,midsld:ip_autottl=-1,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s77
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2:ip_autottl=-2,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s78
+--payload=http_req --lua-desync=fakeddisorder:pos=midsld:ip_autottl=-2,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s79
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2,midsld:ip_autottl=-2,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s80
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2:ip_autottl=-3,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s81
+--payload=http_req --lua-desync=fakeddisorder:pos=midsld:ip_autottl=-3,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s82
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2,midsld:ip_autottl=-3,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s83
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2:ip_autottl=-4,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s84
+--payload=http_req --lua-desync=fakeddisorder:pos=midsld:ip_autottl=-4,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s85
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2,midsld:ip_autottl=-4,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s86
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2:ip_autottl=-5,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s87
+--payload=http_req --lua-desync=fakeddisorder:pos=midsld:ip_autottl=-5,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s88
+--payload=http_req --lua-desync=fakeddisorder:pos=method+2,midsld:ip_autottl=-5,3-20:repeats=1 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s89
+--payload=http_req --lua-desync=hostfakesplit:ip_ttl=2:repeats=1
+##END
+
+##STRAT s90
+--payload=http_req --lua-desync=hostfakesplit:nofake2:ip_ttl=2:repeats=1
+##END
+
+##STRAT s91
+--payload=http_req --lua-desync=hostfakesplit:midhost=midsld:ip_ttl=2:repeats=1
+##END
+
+##STRAT s92
+--payload=http_req --lua-desync=hostfakesplit:nofake2:midhost=midsld:ip_ttl=2:repeats=1
+##END
+
+##STRAT s93
+--payload=http_req --lua-desync=hostfakesplit:tcp_md5:repeats=1
+##END
+
+##STRAT s94
+--payload=http_req --lua-desync=hostfakesplit:nofake2:tcp_md5:repeats=1
+##END
+
+##STRAT s95
+--payload=http_req --lua-desync=hostfakesplit:midhost=midsld:tcp_md5:repeats=1
+##END
+
+##STRAT s96
+--payload=http_req --lua-desync=hostfakesplit:nofake2:midhost=midsld:tcp_md5:repeats=1
+##END
+
+##STRAT s97
+--payload=http_req --lua-desync=hostfakesplit:tcp_md5:repeats=1 --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
+##END
+
+##STRAT s98
+--payload=http_req --lua-desync=hostfakesplit:nofake2:tcp_md5:repeats=1 --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
+##END
+
+##STRAT s99
+--payload=http_req --lua-desync=hostfakesplit:midhost=midsld:tcp_md5:repeats=1 --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
+##END
+
+##STRAT s100
+--payload=http_req --lua-desync=hostfakesplit:nofake2:midhost=midsld:tcp_md5:repeats=1 --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
+##END
+
+##STRAT s101
+--payload=http_req --lua-desync=hostfakesplit:badsum:repeats=1
+##END
+
+##STRAT s102
+--payload=http_req --lua-desync=hostfakesplit:nofake2:badsum:repeats=1
+##END
+
+##STRAT s103
+--payload=http_req --lua-desync=hostfakesplit:midhost=midsld:badsum:repeats=1
+##END
+
+##STRAT s104
+--payload=http_req --lua-desync=hostfakesplit:nofake2:midhost=midsld:badsum:repeats=1
+##END
+
+##STRAT s105
+--payload=http_req --lua-desync=hostfakesplit:tcp_ack=-66000:tcp_ts_up:repeats=1
+##END
+
+##STRAT s106
+--payload=http_req --lua-desync=hostfakesplit:nofake2:tcp_ack=-66000:tcp_ts_up:repeats=1
+##END
+
+##STRAT s107
+--payload=http_req --lua-desync=hostfakesplit:midhost=midsld:tcp_ack=-66000:tcp_ts_up:repeats=1
+##END
+
+##STRAT s108
+--payload=http_req --lua-desync=hostfakesplit:nofake2:midhost=midsld:tcp_ack=-66000:tcp_ts_up:repeats=1
+##END
+
+##STRAT s109
+--payload=http_req --lua-desync=hostfakesplit:tcp_ts=-1000:repeats=1
+##END
+
+##STRAT s110
+--payload=http_req --lua-desync=hostfakesplit:nofake2:tcp_ts=-1000:repeats=1
+##END
+
+##STRAT s111
+--payload=http_req --lua-desync=hostfakesplit:midhost=midsld:tcp_ts=-1000:repeats=1
+##END
+
+##STRAT s112
+--payload=http_req --lua-desync=hostfakesplit:nofake2:midhost=midsld:tcp_ts=-1000:repeats=1
+##END
+
+##STRAT s113
+--payload=http_req --lua-desync=hostfakesplit:tcp_flags_unset=ACK:repeats=1
+##END
+
+##STRAT s114
+--payload=http_req --lua-desync=hostfakesplit:nofake2:tcp_flags_unset=ACK:repeats=1
+##END
+
+##STRAT s115
+--payload=http_req --lua-desync=hostfakesplit:midhost=midsld:tcp_flags_unset=ACK:repeats=1
+##END
+
+##STRAT s116
+--payload=http_req --lua-desync=hostfakesplit:nofake2:midhost=midsld:tcp_flags_unset=ACK:repeats=1
+##END
+
+##STRAT s117
+--payload=http_req --lua-desync=hostfakesplit:tcp_flags_set=SYN:repeats=1
+##END
+
+##STRAT s118
+--payload=http_req --lua-desync=hostfakesplit:nofake2:tcp_flags_set=SYN:repeats=1
+##END
+
+##STRAT s119
+--payload=http_req --lua-desync=hostfakesplit:midhost=midsld:tcp_flags_set=SYN:repeats=1
+##END
+
+##STRAT s120
+--payload=http_req --lua-desync=hostfakesplit:nofake2:midhost=midsld:tcp_flags_set=SYN:repeats=1
+##END
+
+##STRAT s121
+--payload=http_req --lua-desync=hostfakesplit:ip_autottl=-1,3-20:repeats=1
+##END
+
+##STRAT s122
+--payload=http_req --lua-desync=hostfakesplit:nofake2:ip_autottl=-1,3-20:repeats=1
+##END
+
+##STRAT s123
+--payload=http_req --lua-desync=hostfakesplit:midhost=midsld:ip_autottl=-1,3-20:repeats=1
+##END
+
+##STRAT s124
+--payload=http_req --lua-desync=hostfakesplit:nofake2:midhost=midsld:ip_autottl=-1,3-20:repeats=1
+##END
+
+##STRAT s125
+--payload=http_req --lua-desync=hostfakesplit:ip_autottl=-2,3-20:repeats=1
+##END
+
+##STRAT s126
+--payload=http_req --lua-desync=hostfakesplit:nofake2:ip_autottl=-2,3-20:repeats=1
+##END
+
+##STRAT s127
+--payload=http_req --lua-desync=hostfakesplit:midhost=midsld:ip_autottl=-2,3-20:repeats=1
+##END
+
+##STRAT s128
+--payload=http_req --lua-desync=hostfakesplit:nofake2:midhost=midsld:ip_autottl=-2,3-20:repeats=1
+##END
+
+##STRAT s129
+--payload=http_req --lua-desync=hostfakesplit:ip_autottl=-3,3-20:repeats=1
+##END
+
+##STRAT s130
+--payload=http_req --lua-desync=hostfakesplit:nofake2:ip_autottl=-3,3-20:repeats=1
+##END
+
+##STRAT s131
+--payload=http_req --lua-desync=hostfakesplit:midhost=midsld:ip_autottl=-3,3-20:repeats=1
+##END
+
+##STRAT s132
+--payload=http_req --lua-desync=hostfakesplit:nofake2:midhost=midsld:ip_autottl=-3,3-20:repeats=1
+##END
+
+##STRAT s133
+--payload=http_req --lua-desync=hostfakesplit:ip_autottl=-4,3-20:repeats=1
+##END
+
+##STRAT s134
+--payload=http_req --lua-desync=hostfakesplit:nofake2:ip_autottl=-4,3-20:repeats=1
+##END
+
+##STRAT s135
+--payload=http_req --lua-desync=hostfakesplit:midhost=midsld:ip_autottl=-4,3-20:repeats=1
+##END
+
+##STRAT s136
+--payload=http_req --lua-desync=hostfakesplit:nofake2:midhost=midsld:ip_autottl=-4,3-20:repeats=1
+##END
+
+##STRAT s137
+--payload=http_req --lua-desync=hostfakesplit:ip_autottl=-5,3-20:repeats=1
+##END
+
+##STRAT s138
+--payload=http_req --lua-desync=hostfakesplit:nofake2:ip_autottl=-5,3-20:repeats=1
+##END
+
+##STRAT s139
+--payload=http_req --lua-desync=hostfakesplit:midhost=midsld:ip_autottl=-5,3-20:repeats=1
+##END
+
+##STRAT s140
+--payload=http_req --lua-desync=hostfakesplit:nofake2:midhost=midsld:ip_autottl=-5,3-20:repeats=1
+##END
+
+##STRAT s141
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_ttl=2:repeats=1 --lua-desync=multisplit:pos=method+2 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s142
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_ttl=2:repeats=1 --lua-desync=multisplit:pos=method+2 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s143
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_ttl=2:repeats=1 --lua-desync=multisplit:pos=midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s144
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_ttl=2:repeats=1 --lua-desync=multisplit:pos=midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s145
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_ttl=2:repeats=1 --lua-desync=multisplit:pos=method+2,midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s146
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_ttl=2:repeats=1 --lua-desync=multisplit:pos=method+2,midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s147
+--payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5:repeats=1 --lua-desync=multisplit:pos=method+2 --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
+##END
+
+##STRAT s148
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_md5:repeats=1 --lua-desync=multisplit:pos=method+2 --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
+##END
+
+##STRAT s149
+--payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5:repeats=1 --lua-desync=multisplit:pos=midsld --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
+##END
+
+##STRAT s150
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_md5:repeats=1 --lua-desync=multisplit:pos=midsld --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
+##END
+
+##STRAT s151
+--payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5:repeats=1 --lua-desync=multisplit:pos=method+2,midsld --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
+##END
+
+##STRAT s152
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_md5:repeats=1 --lua-desync=multisplit:pos=method+2,midsld --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
+##END
+
+##STRAT s153
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_ack=-66000:tcp_ts_up:repeats=1 --lua-desync=multisplit:pos=method+2
+##END
+
+##STRAT s154
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_ack=-66000:tcp_ts_up:repeats=1 --lua-desync=multisplit:pos=midsld
+##END
+
+##STRAT s155
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_ack=-66000:tcp_ts_up:repeats=1 --lua-desync=multisplit:pos=method+2,midsld
+##END
+
+##STRAT s156
+--payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_ts=-1000:repeats=1 --lua-desync=multisplit:pos=method+2
+##END
+
+##STRAT s157
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_ts=-1000:repeats=1 --lua-desync=multisplit:pos=method+2
+##END
+
+##STRAT s158
+--payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_ts=-1000:repeats=1 --lua-desync=multisplit:pos=midsld
+##END
+
+##STRAT s159
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_ts=-1000:repeats=1 --lua-desync=multisplit:pos=midsld
+##END
+
+##STRAT s160
+--payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_ts=-1000:repeats=1 --lua-desync=multisplit:pos=method+2,midsld
+##END
+
+##STRAT s161
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_ts=-1000:repeats=1 --lua-desync=multisplit:pos=method+2,midsld
+##END
+
+##STRAT s162
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_flags_unset=ACK:repeats=1 --lua-desync=multisplit:pos=method+2
+##END
+
+##STRAT s163
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_flags_unset=ACK:repeats=1 --lua-desync=multisplit:pos=midsld
+##END
+
+##STRAT s164
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_flags_unset=ACK:repeats=1 --lua-desync=multisplit:pos=method+2,midsld
+##END
+
+##STRAT s165
+--payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_flags_set=SYN:repeats=1 --lua-desync=multisplit:pos=method+2
+##END
+
+##STRAT s166
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_flags_set=SYN:repeats=1 --lua-desync=multisplit:pos=method+2
+##END
+
+##STRAT s167
+--payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_flags_set=SYN:repeats=1 --lua-desync=multisplit:pos=midsld
+##END
+
+##STRAT s168
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_flags_set=SYN:repeats=1 --lua-desync=multisplit:pos=midsld
+##END
+
+##STRAT s169
+--payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_flags_set=SYN:repeats=1 --lua-desync=multisplit:pos=method+2,midsld
+##END
+
+##STRAT s170
+--payload=http_req --lua-desync=fake:blob=0x00000000:tcp_flags_set=SYN:repeats=1 --lua-desync=multisplit:pos=method+2,midsld
+##END
+
+##STRAT s171
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-1,3-20:repeats=1 --lua-desync=multisplit:pos=method+2 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s172
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-1,3-20:repeats=1 --lua-desync=multisplit:pos=method+2 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s173
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-1,3-20:repeats=1 --lua-desync=multisplit:pos=midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s174
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-1,3-20:repeats=1 --lua-desync=multisplit:pos=midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s175
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-1,3-20:repeats=1 --lua-desync=multisplit:pos=method+2,midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s176
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-1,3-20:repeats=1 --lua-desync=multisplit:pos=method+2,midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s177
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-2,3-20:repeats=1 --lua-desync=multisplit:pos=method+2 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s178
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-2,3-20:repeats=1 --lua-desync=multisplit:pos=method+2 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s179
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-2,3-20:repeats=1 --lua-desync=multisplit:pos=midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s180
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-2,3-20:repeats=1 --lua-desync=multisplit:pos=midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s181
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-2,3-20:repeats=1 --lua-desync=multisplit:pos=method+2,midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s182
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-2,3-20:repeats=1 --lua-desync=multisplit:pos=method+2,midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s183
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-3,3-20:repeats=1 --lua-desync=multisplit:pos=method+2 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s184
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-3,3-20:repeats=1 --lua-desync=multisplit:pos=method+2 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s185
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-3,3-20:repeats=1 --lua-desync=multisplit:pos=midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s186
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-3,3-20:repeats=1 --lua-desync=multisplit:pos=midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s187
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-3,3-20:repeats=1 --lua-desync=multisplit:pos=method+2,midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s188
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-3,3-20:repeats=1 --lua-desync=multisplit:pos=method+2,midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s189
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-4,3-20:repeats=1 --lua-desync=multisplit:pos=method+2 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s190
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-4,3-20:repeats=1 --lua-desync=multisplit:pos=method+2 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s191
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-4,3-20:repeats=1 --lua-desync=multisplit:pos=midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s192
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-4,3-20:repeats=1 --lua-desync=multisplit:pos=midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s193
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-4,3-20:repeats=1 --lua-desync=multisplit:pos=method+2,midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s194
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-4,3-20:repeats=1 --lua-desync=multisplit:pos=method+2,midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s195
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-5,3-20:repeats=1 --lua-desync=multisplit:pos=method+2 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s196
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-5,3-20:repeats=1 --lua-desync=multisplit:pos=method+2 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s197
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-5,3-20:repeats=1 --lua-desync=multisplit:pos=midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s198
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-5,3-20:repeats=1 --lua-desync=multisplit:pos=midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s199
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-5,3-20:repeats=1 --lua-desync=multisplit:pos=method+2,midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s200
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_autottl=-5,3-20:repeats=1 --lua-desync=multisplit:pos=method+2,midsld --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s201
+--payload=http_req --lua-desync=fake:blob=fake_default_http:ip_ttl=2:repeats=1 --lua-desync=multidisorder:pos=method+2 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s202
+--payload=http_req --lua-desync=fake:blob=0x00000000:ip_ttl=2:repeats=1 --lua-desync=multidisorder:pos=method+2 --payload=empty --out-range=s1<d1 --lua-desync=pktmod:ip_ttl=1
+##END
+
+##STRAT s203
+--lua-desync=wssize:wsize=1:scale=6 --payload=tls_client_hello --lua-desync=multidisorder:pos=2
+##END
+
+##STRAT s204
+--lua-desync=wssize:wsize=1:scale=6 --payload=tls_client_hello --lua-desync=multidisorder:pos=1
+##END
+
+##STRAT s205
+--lua-desync=wssize:wsize=1:scale=6 --payload=tls_client_hello --lua-desync=multidisorder:pos=sniext+1
+##END
+
+##STRAT s206
+--lua-desync=wssize:wsize=1:scale=6 --payload=tls_client_hello --lua-desync=multidisorder:pos=sniext+4
+##END
+
+##STRAT s207
+--lua-desync=wssize:wsize=1:scale=6 --payload=tls_client_hello --lua-desync=multidisorder:pos=host+1
+##END
+
+##STRAT s208
+--lua-desync=wssize:wsize=1:scale=6 --payload=tls_client_hello --lua-desync=multidisorder:pos=midsld
+##END
+
+##STRAT s209
+--lua-desync=wssize:wsize=1:scale=6 --payload=tls_client_hello --lua-desync=multidisorder:pos=1,midsld
+##END
+
+##STRAT s210
+--lua-desync=wssize:wsize=1:scale=6 --payload=tls_client_hello --lua-desync=multidisorder:pos=1,midsld,1220
+##END
+
+##STRAT s211
+--lua-desync=wssize:wsize=1:scale=6 --payload=tls_client_hello --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1
+##END
+
+##STRAT s212
+--lua-desync=wssize:wsize=1:scale=6 --payload=tls_client_hello --lua-desync=tcpseg:pos=0,-1:seqovl=1 --lua-desync=drop
+##END
+
+##STRAT s213
+--lua-desync=wssize:wsize=1:scale=6 --payload=tls_client_hello --lua-desync=multisplit:pos=10:seqovl=1
+##END
+
+##STRAT s214
+--lua-init=fake_default_tls=tls_mod(fake_default_tls,'rnd') --lua-desync=wssize:wsize=1:scale=6 --payload=tls_client_hello --lua-desync=multidisorder:pos=2:seqovl=1:seqovl_pattern=fake_default_tls
+##END
+
+##STRAT s215
+--lua-init=fake_default_tls=tls_mod(fake_default_tls,'rnd') --lua-desync=wssize:wsize=1:scale=6 --payload=tls_client_hello --lua-desync=multidisorder:pos=sniext+1:seqovl=sniext:seqovl_pattern=fake_default_tls
+##END
+
+##STRAT s216
+--lua-init=fake_default_tls=tls_mod(fake_default_tls,'rnd') --lua-desync=wssize:wsize=1:scale=6 --payload=tls_client_hello --lua-desync=multidisorder:pos=sniext+4:seqovl=sniext+3:seqovl_pattern=fake_default_tls
+##END
+
+##STRAT s217
+--lua-init=fake_default_tls=tls_mod(fake_default_tls,'rnd') --lua-desync=wssize:wsize=1:scale=6 --payload=tls_client_hello --lua-desync=multidisorder:pos=midsld:seqovl=midsld-1:seqovl_pattern=fake_default_tls
+##END
+
+##STRAT s218
+--lua-init=fake_default_tls=tls_mod(fake_default_tls,'rnd') --lua-desync=wssize:wsize=1:scale=6 --payload=tls_client_hello --lua-desync=multidisorder:pos=2,midsld:seqovl=1:seqovl_pattern=fake_default_tls
+##END
+
+##STRAT s219
+--lua-desync=wssize:wsize=1:scale=6 --lua-desync=syndata --payload=tls_client_hello --lua-desync=multisplit
+##END
+
+##STRAT s220
+--lua-desync=wssize:wsize=1:scale=6 --lua-desync=syndata:blob=0x1603 --payload=tls_client_hello --lua-desync=multisplit
+##END
+
+##STRAT s221
+--lua-desync=wssize:wsize=1:scale=6 --lua-desync=syndata --payload=tls_client_hello --lua-desync=multidisorder
+##END
+
+##STRAT s222
+--lua-desync=wssize:wsize=1:scale=6 --lua-desync=syndata:blob=0x1603 --payload=tls_client_hello --lua-desync=multidisorder
 ##END
