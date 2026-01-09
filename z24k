@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-09-1"
+SCRIPT_VERSION="2026-01-09-2"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -2165,21 +2165,17 @@ menu() {
 	menu_item "1" "Установка/Обновление" ""
 	menu_item "2" "Удаление" ""
 	if is_installed; then
-		menu_item "3" "Стратегия: Категории (community)" ""
-		menu_item "4" "Стратегия: z2r (raw config)" ""
-		menu_item "5" "Обновить все списки" ""
-		menu_item "6" "Редактировать категории" ""
-		menu_item "7" "Подбор стратегий (как z4r)" ""
-		menu_item "8" "Запустить blockcheck2 (интерактивно)" ""
-		menu_item "9" "Тест стратегий (авто)" ""
-		menu_item "10" "Обновить списки (z4r)" ""
-		menu_item "11" "Вкл/Выкл NFQWS2" ""
-		menu_item "12" "Остановить сервис" ""
-		menu_item "13" "Перезапуск сервиса" ""
-		menu_item "14" "Показать статус" ""
-		menu_item "15" "Показать стратегии категорий" ""
-		menu_item "16" "Показать NFQWS2_OPT (категории)" ""
-		menu_item "17" "Редактировать config" ""
+		menu_item "3" "Обновить все списки" ""
+		menu_item "4" "Редактировать категории" ""
+		menu_item "5" "Выбор стратегий по разделам" ""
+		menu_item "6" "Запустить blockcheck2 (интерактивно)" ""
+		menu_item "7" "Вкл/Выкл NFQWS2" ""
+		menu_item "8" "Остановить сервис" ""
+		menu_item "9" "Перезапуск сервиса" ""
+		menu_item "10" "Показать статус" ""
+		menu_item "11" "Показать стратегии категорий" ""
+		menu_item "12" "Показать NFQWS2_OPT (категории)" ""
+		menu_item "13" "Редактировать config" ""
 	fi
 	menu_item "0" "Выход" ""
 	echo ""
@@ -2188,21 +2184,17 @@ menu() {
 	case "$ans" in
 		1) do_install ;;
 		2) do_uninstall ;;
-		3) is_installed && apply_preset "categories" "$(preset_categories)" ;;
-		4) is_installed && apply_z2r_preset && restart_service && pause_enter ;;
-		5) is_installed && sync_all_lists && pause_enter ;;
-		6) is_installed && ensure_category_files && ${EDITOR:-vi} "$CATEGORIES_FILE" ;;
-		7) is_installed && magisk_pick_menu ;;
-		8) is_installed && run_blockcheck ;;
-		9) is_installed && test_strategies ;;
-		10) is_installed && sync_all_lists && pause_enter ;;
-		11) is_installed && toggle_nfqws2 ;;
-		12) is_installed && stop_service && pause_enter ;;
-		13) is_installed && restart_service && pause_enter ;;
-		14) show_status && pause_enter ;;
-		15) show_category_strategies && pause_enter ;;
-		16) show_category_command && pause_enter ;;
-		17) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
+		3) is_installed && sync_all_lists && pause_enter ;;
+		4) is_installed && ensure_category_files && ${EDITOR:-vi} "$CATEGORIES_FILE" ;;
+		5) is_installed && magisk_pick_menu ;;
+		6) is_installed && run_blockcheck ;;
+		7) is_installed && toggle_nfqws2 ;;
+		8) is_installed && stop_service && pause_enter ;;
+		9) is_installed && restart_service && pause_enter ;;
+		10) show_status && pause_enter ;;
+		11) show_category_strategies && pause_enter ;;
+		12) show_category_command && pause_enter ;;
+		13) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
 		0|"") exit 0 ;;
 		*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
 	esac
@@ -2212,4 +2204,3 @@ menu() {
 
 log "Menu version $SCRIPT_VERSION"
 menu
-
