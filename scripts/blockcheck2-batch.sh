@@ -88,7 +88,7 @@ for url in $URLS_ALL; do
 			TLS12=0
 			TLS13=1
 		fi
-		env BATCH=1 TEST=custom DOMAINS="$dom" ZAPRET_BASE="/opt/zapret2" ZAPRET_RW="/opt/zapret2" \
+		env BATCH=1 TEST=standard DOMAINS="$dom" ZAPRET_BASE="/opt/zapret2" ZAPRET_RW="/opt/zapret2" \
 			SKIP_DNSCHECK=1 ENABLE_HTTP=0 ENABLE_HTTPS_TLS12=$TLS12 ENABLE_HTTPS_TLS13=$TLS13 ENABLE_HTTP3=0 \
 			REPEATS=1 SCANLEVEL=force PARALLEL=0 IPVS=4 \
 			sh "$BLOCKCHECK_NOINT" >"$logfile" 2>&1 || true
