@@ -2,6 +2,7 @@
 set -e
 
 BLOCKCHECK="/opt/zapret2/blockcheck2.sh"
+SERVICE="/opt/zapret2/init.d/sysv/zapret2"
 OUT_DIR="/tmp/z24k-bc2-logs"
 RESULTS="/tmp/z24k-blockcheck2-results.txt"
 CAT_FILE="/opt/zapret2/z24k-categories.ini"
@@ -63,13 +64,19 @@ echo "URLs: $URLS_ALL" | tee -a "$RESULTS"
 echo "Results file: $RESULTS"
 echo "Logs: $OUT_DIR"
 
+STOP_ZAPRET="${STOP_ZAPRET:-1}"
+if [ "$STOP_ZAPRET" = "1" ] && [ -x "$SERVICE" ]; then
+	"$SERVICE" stop >/dev/null 2>&1 || true
+fi
+
 for url in $URLS_ALL; do
 	name=$(sanitize_name "$url")
 	for tls in tls12 tls13; do
 		logfile="$OUT_DIR/${name}.${tls}.log"
 		echo "=== $url ($tls) ===" | tee -a "$RESULTS"
 		TEST_URL="$url" TESTS="curl_test_https_${tls}" ZAPRET_BASE="/opt/zapret2" ZAPRET_RW="/opt/zapret2" \
-			sh "$BLOCKCHECK" >"$logfile" 2>&1 || true
+			BLOCKCHECK_TEST=standard BLOCKCHECK_ASSUME_YES=1 \
+			printf "2\n" | sh "$BLOCKCHECK" >"$logfile" 2>&1 || true
 		strat=$(extract_strategy "curl_test_https_${tls}" "$logfile")
 		if [ -n "$strat" ]; then
 			echo "FOUND: $strat" | tee -a "$RESULTS"
@@ -79,5 +86,9 @@ for url in $URLS_ALL; do
 		echo "" | tee -a "$RESULTS"
 	done
 done
+
+if [ "$STOP_ZAPRET" = "1" ] && [ -x "$SERVICE" ]; then
+	"$SERVICE" start >/dev/null 2>&1 || true
+fi
 
 echo "Done. Results: $RESULTS"
