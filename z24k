@@ -175,16 +175,16 @@ set_opt_block() {
 	: > "$tmp"
 	while IFS= read -r line; do
 		if [ "$in_block" -eq 1 ]; then
-			[ "$line" = "\"" ] && in_block=0
+			[ "$line" = """ ] && in_block=0
 			continue
 		fi
-		if [ "$line" = "NFQWS2_OPT=\"" ]; then
+		if [ "$line" = "NFQWS2_OPT="" ]; then
 			found=1
 			in_block=1
 			{
-				echo "NFQWS2_OPT=\""
+				echo "NFQWS2_OPT=""
 				printf "%s\n" "$opt"
-				echo "\""
+				echo """
 			} >> "$tmp"
 			continue
 		fi
@@ -194,9 +194,9 @@ set_opt_block() {
 	if [ "$found" -eq 0 ]; then
 		{
 			echo ""
-			echo "NFQWS2_OPT=\""
+			echo "NFQWS2_OPT=""
 			printf "%s\n" "$opt"
-			echo "\""
+			echo """
 		} >> "$tmp"
 	fi
 
@@ -606,9 +606,22 @@ stop_blockcheck() {
 ensure_payload() {
 	strat="$1"
 	payload="$2"
-	case "$strat" in
-		*--payload=*) printf "%s" "$strat" ;;
-		*) printf "--payload=%s %s" "$payload" "$strat" ;;
+	case "$ans" in
+		1) do_install ;;
+		2) do_uninstall ;;
+		3) is_installed && sync_all_lists && pause_enter ;;
+		4) is_installed && ensure_category_files && ${EDITOR:-vi} "$CATEGORIES_FILE" ;;
+		5) is_installed && magisk_pick_menu ;;
+		6) is_installed && run_blockcheck ;;
+		7) is_installed && toggle_nfqws2 ;;
+		8) is_installed && stop_service && pause_enter ;;
+		9) is_installed && restart_service && pause_enter ;;
+		10) show_status && pause_enter ;;
+		11) show_category_strategies && pause_enter ;;
+		12) show_category_command && pause_enter ;;
+		13) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
+		0|"") exit 0 ;;
+		*) echo -e "${yellow}???????? ?????.${plain}"; sleep 1 ;;
 	esac
 }
 
@@ -1963,22 +1976,24 @@ pick_strategy_interactive() {
 		echo -e "${cyan}Стратегия #${idx}: ${green}${strat}${plain}"
 		check_access "$url"
 		read_tty "1=сохранить, 0=отмена, Enter=следующая: " ans
-		case "$ans" in
-			1)
-				echo -e "${green}Сохранено.${plain}"
-				pause_enter
-				return
-				;;
-			0)
-				[ -n "$prev" ] && set_category_strategy "$section" "$prev"
-				set_kv Z24K_PRESET categories
-				set_opt_block "$(preset_categories)"
-				restart_service_timeout || true
-				echo -e "${yellow}Отмена.${plain}"
-				pause_enter
-				return
-				;;
-		esac
+	
+	case "$ans" in
+		1) do_install ;;
+		2) do_uninstall ;;
+		3) is_installed && sync_all_lists && pause_enter ;;
+		4) is_installed && ensure_category_files && ${EDITOR:-vi} "$CATEGORIES_FILE" ;;
+		5) is_installed && magisk_pick_menu ;;
+		6) is_installed && run_blockcheck ;;
+		7) is_installed && toggle_nfqws2 ;;
+		8) is_installed && stop_service && pause_enter ;;
+		9) is_installed && restart_service && pause_enter ;;
+		10) show_status && pause_enter ;;
+		11) show_category_strategies && pause_enter ;;
+		12) show_category_command && pause_enter ;;
+		13) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
+		0|"") exit 0 ;;
+		*) echo -e "${yellow}???????? ?????.${plain}"; sleep 1 ;;
+	esac
 	done < "$tmpfile"
 
 	echo -e "${yellow}Стратегии закончились.${plain}"
@@ -1997,17 +2012,24 @@ magisk_pick_menu() {
 		echo "0. Exit"
 		echo ""
 		read_tty "Select: " ans
-		case "$ans" in
-			1) pick_strategy_interactive "youtube_udp" "udp" "YouTube UDP" "https://www.youtube.com/" ;;
-			2) pick_strategy_interactive "youtube" "tcp" "YouTube TCP" "https://www.youtube.com/" ;;
-			3)
-				read_tty "URL (Enter=rr1---sn-jvhnu5g-n8vr.googlevideo.com): " url
-				[ -z "$url" ] && url="https://rr1---sn-jvhnu5g-n8vr.googlevideo.com"
-				pick_strategy_interactive "googlevideo_tcp" "tcp" "Googlevideo" "$url"
-				;;
-			4) pick_strategy_interactive "rkn" "tcp" "RKN" "https://meduza.io" ;;
-			0|"") return ;;
-			esac
+	
+	case "$ans" in
+		1) do_install ;;
+		2) do_uninstall ;;
+		3) is_installed && sync_all_lists && pause_enter ;;
+		4) is_installed && ensure_category_files && ${EDITOR:-vi} "$CATEGORIES_FILE" ;;
+		5) is_installed && magisk_pick_menu ;;
+		6) is_installed && run_blockcheck ;;
+		7) is_installed && toggle_nfqws2 ;;
+		8) is_installed && stop_service && pause_enter ;;
+		9) is_installed && restart_service && pause_enter ;;
+		10) show_status && pause_enter ;;
+		11) show_category_strategies && pause_enter ;;
+		12) show_category_command && pause_enter ;;
+		13) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
+		0|"") exit 0 ;;
+		*) echo -e "${yellow}???????? ?????.${plain}"; sleep 1 ;;
+	esac
 	done
 }
 
@@ -2138,12 +2160,12 @@ show_status() {
 	enable=$(get_kv NFQWS2_ENABLE)
 	[ -z "$preset" ] && preset="unknown"
 	[ -z "$enable" ] && enable="unknown"
-
 	if is_installed; then
 		installed="yes"
 	else
 		installed="no"
 	fi
+
 
 	running="stopped"
 	if ps 2>/dev/null | grep -v grep | grep -q "nfqws2"; then
@@ -2164,47 +2186,42 @@ menu() {
 	echo ""
 	menu_item "1" "Установка/Обновление" ""
 	menu_item "2" "Удаление" ""
+
+
 	if is_installed; then
-		menu_item "3" "Стратегия: Категории (community)" ""
-		menu_item "4" "Стратегия: z2r (raw config)" ""
-		menu_item "5" "Обновить все списки" ""
-		menu_item "6" "Редактировать категории" ""
-		menu_item "7" "Подбор стратегий (как z4r)" ""
-		menu_item "8" "Запустить blockcheck2 (интерактивно)" ""
-		menu_item "9" "Тест стратегий (авто)" ""
-		menu_item "10" "Обновить списки (z4r)" ""
-		menu_item "11" "Вкл/Выкл NFQWS2" ""
-		menu_item "12" "Остановить сервис" ""
-		menu_item "13" "Перезапуск сервиса" ""
-		menu_item "14" "Показать статус" ""
-		menu_item "15" "Показать стратегии категорий" ""
-		menu_item "16" "Показать NFQWS2_OPT (категории)" ""
-		menu_item "17" "Редактировать config" ""
+		menu_item "3" "???????? ??? ??????" ""
+		menu_item "4" "????????????? ?????????" ""
+		menu_item "5" "????? ????????? ?? ????????" ""
+		menu_item "6" "????????? blockcheck2 (????????????)" ""
+		menu_item "7" "???/???? NFQWS2" ""
+		menu_item "8" "?????????? ??????" ""
+		menu_item "9" "?????????? ???????" ""
+		menu_item "10" "???????? ??????" ""
+		menu_item "11" "???????? ????????? ?????????" ""
+		menu_item "12" "???????? NFQWS2_OPT (?????????)" ""
+		menu_item "13" "????????????? config" ""
 	fi
 	menu_item "0" "Выход" ""
 	echo ""
 	read_tty "Ваш выбор: " ans
 
+
 	case "$ans" in
 		1) do_install ;;
 		2) do_uninstall ;;
-		3) is_installed && apply_preset "categories" "$(preset_categories)" ;;
-		4) is_installed && apply_z2r_preset && restart_service && pause_enter ;;
-		5) is_installed && sync_all_lists && pause_enter ;;
-		6) is_installed && ensure_category_files && ${EDITOR:-vi} "$CATEGORIES_FILE" ;;
-		7) is_installed && magisk_pick_menu ;;
-		8) is_installed && run_blockcheck ;;
-		9) is_installed && test_strategies ;;
-		10) is_installed && sync_all_lists && pause_enter ;;
-		11) is_installed && toggle_nfqws2 ;;
-		12) is_installed && stop_service && pause_enter ;;
-		13) is_installed && restart_service && pause_enter ;;
-		14) show_status && pause_enter ;;
-		15) show_category_strategies && pause_enter ;;
-		16) show_category_command && pause_enter ;;
-		17) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
+		3) is_installed && sync_all_lists && pause_enter ;;
+		4) is_installed && ensure_category_files && ${EDITOR:-vi} "$CATEGORIES_FILE" ;;
+		5) is_installed && magisk_pick_menu ;;
+		6) is_installed && run_blockcheck ;;
+		7) is_installed && toggle_nfqws2 ;;
+		8) is_installed && stop_service && pause_enter ;;
+		9) is_installed && restart_service && pause_enter ;;
+		10) show_status && pause_enter ;;
+		11) show_category_strategies && pause_enter ;;
+		12) show_category_command && pause_enter ;;
+		13) is_installed && ${EDITOR:-vi} "$CONFIG" ;;
 		0|"") exit 0 ;;
-		*) echo -e "${yellow}Неверный ввод.${plain}"; sleep 1 ;;
+		*) echo -e "${yellow}???????? ?????.${plain}"; sleep 1 ;;
 	esac
 
 	menu
