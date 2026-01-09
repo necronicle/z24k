@@ -39,11 +39,12 @@ sanitize_name() {
 	printf "%s" "$1" | sed 's|https\?://||g; s|[^a-zA-Z0-9._-]|_|g'
 }
 
-extract_strategy() {
+extract_strategies_all() {
 	testname="$1"
 	logfile="$2"
-	grep -F "working strategy found" "$logfile" | grep -F "$testname" | tail -n1 \
-		| sed -e 's/^.*: [^ ]* //' -e 's/ !!!!!$//' -e 's/^nfqws2 //' -e 's/^dvtws2 //' -e 's/^winws2 //' | xargs
+	grep -F "working strategy found" "$logfile" | grep -F "$testname" \
+		| sed -e 's/^.*: [^ ]* //' -e 's/ !!!!!$//' -e 's/^nfqws2 //' -e 's/^dvtws2 //' -e 's/^winws2 //' \
+		| sed 's/[[:space:]]*$//' | sort -u
 }
 
 if [ ! -x "$BLOCKCHECK" ]; then
@@ -89,11 +90,15 @@ for url in $URLS_ALL; do
 		fi
 		env BATCH=1 TEST=custom DOMAINS="$dom" ZAPRET_BASE="/opt/zapret2" ZAPRET_RW="/opt/zapret2" \
 			SKIP_DNSCHECK=1 ENABLE_HTTP=0 ENABLE_HTTPS_TLS12=$TLS12 ENABLE_HTTPS_TLS13=$TLS13 ENABLE_HTTP3=0 \
-			REPEATS=1 SCANLEVEL=standard PARALLEL=0 IPVS=4 \
+			REPEATS=1 SCANLEVEL=force PARALLEL=0 IPVS=4 \
 			sh "$BLOCKCHECK_NOINT" >"$logfile" 2>&1 || true
-		strat=$(extract_strategy "curl_test_https_${tls}" "$logfile")
-		if [ -n "$strat" ]; then
-			echo "FOUND: $strat" | tee -a "$RESULTS"
+		strats=$(extract_strategies_all "curl_test_https_${tls}" "$logfile")
+		if [ -n "$strats" ]; then
+			count=$(printf "%s\n" "$strats" | wc -l | tr -d ' ')
+			echo "FOUND_COUNT: $count" | tee -a "$RESULTS"
+			printf "%s\n" "$strats" | while IFS= read -r s; do
+				[ -n "$s" ] && echo "FOUND: $s" | tee -a "$RESULTS"
+			done
 		else
 			echo "FOUND: NONE" | tee -a "$RESULTS"
 		fi
