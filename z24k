@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-SCRIPT_VERSION="2026-01-08-125"
+SCRIPT_VERSION="2026-01-08-126"
 DEFAULT_VER="0.8.2"
 REPO="bol-van/zapret2"
 Z24K_REPO="necronicle/z24k"
@@ -422,7 +422,7 @@ do_install() {
 	fi
 
 	"$SERVICE" restart
-	if [ "${Z24K_AUTOPICK:-0}" = "1" ] && required_lists_ok; then
+	if [ "${Z24K_AUTOPICK:-1}" = "1" ] && required_lists_ok; then
 		Z24K_AUTOPICK_RAW=1 auto_pick_all_categories
 	fi
 	log "Install complete."
