@@ -2,6 +2,7 @@
 set -e
 
 BLOCKCHECK="/opt/zapret2/blockcheck2.sh"
+BLOCKCHECK_NOINT="/tmp/z24k-blockcheck2-noint.sh"
 SERVICE="/opt/zapret2/init.d/sysv/zapret2"
 OUT_DIR="/tmp/z24k-bc2-logs"
 RESULTS="/tmp/z24k-blockcheck2-results.txt"
@@ -69,14 +70,33 @@ if [ "$STOP_ZAPRET" = "1" ] && [ -x "$SERVICE" ]; then
 	"$SERVICE" stop >/dev/null 2>&1 || true
 fi
 
+# create non-interactive wrapper to avoid prompts
+if [ -x "$BLOCKCHECK" ]; then
+	sed '
+		/^BLOCKCHECK_TEST=/d
+		/^BLOCKCHECK_ASSUME_YES=/d
+		/^BLOCKCHECK_NONINTERACTIVE=/d
+	' "$BLOCKCHECK" > "$BLOCKCHECK_NOINT" 2>/dev/null || true
+	{
+		echo "BLOCKCHECK_TEST=standard"
+		echo "BLOCKCHECK_ASSUME_YES=1"
+		echo "BLOCKCHECK_NONINTERACTIVE=1"
+		cat "$BLOCKCHECK_NOINT"
+	} > "$BLOCKCHECK_NOINT.tmp" 2>/dev/null || true
+	mv -f "$BLOCKCHECK_NOINT.tmp" "$BLOCKCHECK_NOINT" 2>/dev/null || true
+	chmod +x "$BLOCKCHECK_NOINT" 2>/dev/null || true
+else
+	BLOCKCHECK_NOINT="$BLOCKCHECK"
+fi
+
 for url in $URLS_ALL; do
 	name=$(sanitize_name "$url")
 	for tls in tls12 tls13; do
 		logfile="$OUT_DIR/${name}.${tls}.log"
 		echo "=== $url ($tls) ===" | tee -a "$RESULTS"
 		TEST_URL="$url" TESTS="curl_test_https_${tls}" ZAPRET_BASE="/opt/zapret2" ZAPRET_RW="/opt/zapret2" \
-			BLOCKCHECK_TEST=standard BLOCKCHECK_ASSUME_YES=1 \
-			printf "2\n" | sh "$BLOCKCHECK" >"$logfile" 2>&1 || true
+			BLOCKCHECK_TEST=standard BLOCKCHECK_ASSUME_YES=1 BLOCKCHECK_NONINTERACTIVE=1 \
+			sh "$BLOCKCHECK_NOINT" </dev/null >"$logfile" 2>&1 || true
 		strat=$(extract_strategy "curl_test_https_${tls}" "$logfile")
 		if [ -n "$strat" ]; then
 			echo "FOUND: $strat" | tee -a "$RESULTS"
