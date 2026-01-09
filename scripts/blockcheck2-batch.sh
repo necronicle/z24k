@@ -74,10 +74,12 @@ fi
 BLOCKCHECK_NOINT="$BLOCKCHECK"
 
 for url in $URLS_ALL; do
+	dom=$(printf "%s" "$url" | sed 's|^https\?://||; s|/.*$||')
+	[ -n "$dom" ] || continue
 	name=$(sanitize_name "$url")
 	for tls in tls12 tls13; do
 		logfile="$OUT_DIR/${name}.${tls}.log"
-		echo "=== $url ($tls) ===" | tee -a "$RESULTS"
+		echo "=== $dom ($tls) ===" | tee -a "$RESULTS"
 		if [ "$tls" = "tls12" ]; then
 			TLS12=1
 			TLS13=0
@@ -85,7 +87,7 @@ for url in $URLS_ALL; do
 			TLS12=0
 			TLS13=1
 		fi
-		env BATCH=1 TEST=custom DOMAINS="$url" ZAPRET_BASE="/opt/zapret2" ZAPRET_RW="/opt/zapret2" \
+		env BATCH=1 TEST=custom DOMAINS="$dom" ZAPRET_BASE="/opt/zapret2" ZAPRET_RW="/opt/zapret2" \
 			SKIP_DNSCHECK=1 ENABLE_HTTP=0 ENABLE_HTTPS_TLS12=$TLS12 ENABLE_HTTPS_TLS13=$TLS13 ENABLE_HTTP3=0 \
 			REPEATS=1 SCANLEVEL=standard PARALLEL=0 IPVS=4 \
 			sh "$BLOCKCHECK_NOINT" >"$logfile" 2>&1 || true
