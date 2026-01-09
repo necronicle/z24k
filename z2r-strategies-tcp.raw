@@ -1,3 +1,11 @@
+##STRAT bc_tls_ts
+--payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_ts=-1000
+##END
+
+##STRAT bc_tcpseg_drop
+--payload=tls_client_hello --lua-desync=tcpseg:pos=0,-1:seqovl=1 --lua-desync=drop
+##END
+
 ##STRAT s203
 --lua-desync=wssize:wsize=1:scale=6 --payload=tls_client_hello --lua-desync=multidisorder:pos=2
 ##END
