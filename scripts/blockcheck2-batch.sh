@@ -70,32 +70,24 @@ if [ "$STOP_ZAPRET" = "1" ] && [ -x "$SERVICE" ]; then
 	"$SERVICE" stop >/dev/null 2>&1 || true
 fi
 
-# create non-interactive wrapper to avoid prompts
-if [ -x "$BLOCKCHECK" ]; then
-	sed '
-		/^BLOCKCHECK_TEST=/d
-		/^BLOCKCHECK_ASSUME_YES=/d
-		/^BLOCKCHECK_NONINTERACTIVE=/d
-	' "$BLOCKCHECK" > "$BLOCKCHECK_NOINT" 2>/dev/null || true
-	{
-		echo "BLOCKCHECK_TEST=custom"
-		echo "BLOCKCHECK_ASSUME_YES=1"
-		echo "BLOCKCHECK_NONINTERACTIVE=1"
-		cat "$BLOCKCHECK_NOINT"
-	} > "$BLOCKCHECK_NOINT.tmp" 2>/dev/null || true
-	mv -f "$BLOCKCHECK_NOINT.tmp" "$BLOCKCHECK_NOINT" 2>/dev/null || true
-	chmod +x "$BLOCKCHECK_NOINT" 2>/dev/null || true
-else
-	BLOCKCHECK_NOINT="$BLOCKCHECK"
-fi
+# use blockcheck2 in batch mode (no prompts)
+BLOCKCHECK_NOINT="$BLOCKCHECK"
 
 for url in $URLS_ALL; do
 	name=$(sanitize_name "$url")
 	for tls in tls12 tls13; do
 		logfile="$OUT_DIR/${name}.${tls}.log"
 		echo "=== $url ($tls) ===" | tee -a "$RESULTS"
-		printf "1\n" | env TEST_URL="$url" TESTS="curl_test_https_${tls}" ZAPRET_BASE="/opt/zapret2" ZAPRET_RW="/opt/zapret2" \
-			BLOCKCHECK_TEST=custom BLOCKCHECK_ASSUME_YES=1 BLOCKCHECK_NONINTERACTIVE=1 \
+		if [ "$tls" = "tls12" ]; then
+			TLS12=1
+			TLS13=0
+		else
+			TLS12=0
+			TLS13=1
+		fi
+		env BATCH=1 TEST=custom DOMAINS="$url" ZAPRET_BASE="/opt/zapret2" ZAPRET_RW="/opt/zapret2" \
+			ENABLE_HTTP=0 ENABLE_HTTPS_TLS12=$TLS12 ENABLE_HTTPS_TLS13=$TLS13 ENABLE_HTTP3=0 \
+			REPEATS=1 SCANLEVEL=standard PARALLEL=0 IPVS=4 \
 			sh "$BLOCKCHECK_NOINT" >"$logfile" 2>&1 || true
 		strat=$(extract_strategy "curl_test_https_${tls}" "$logfile")
 		if [ -n "$strat" ]; then
